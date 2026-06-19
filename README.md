@@ -90,6 +90,16 @@ Options:
 Because sometimes a small, strange command-line toy is exactly enough momentum
 to start making things again.
 
+## Product Direction
+
+The long-term goal is to turn World Forge into a free, open-source, multilingual
+worldbuilding tool for D&D/TTRPG campaigns: continents, regions, countries,
+settlements, NPCs, factions, quests, dungeons, printable maps, and player-safe
+exports in one place.
+
+- [Roadmap](docs/ROADMAP.md)
+- [Deployment strategy](docs/DEPLOYMENT_STRATEGY.md)
+
 ## Development
 
 ```bash
