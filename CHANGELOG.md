@@ -7,6 +7,7 @@
 - Renamed the project from `world-forge` to **Atlasmancer**.
 - Renamed the Python package from `world_forge` to `atlasmancer`.
 - Renamed the CLI command from `world-forge` to `atlasmancer`.
+- Expanded NPC and rumor content banks; flavor text for existing seeds may change as a result.
 
 ### Breaking
 

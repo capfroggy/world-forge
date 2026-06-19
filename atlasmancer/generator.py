@@ -119,13 +119,6 @@ TITLE_NOUNS = [
     "Wilds",
 ]
 
-# Expanded locale banks are already stored in locales/*.json, but v0.2 keeps
-# pre-i18n pool sizes for fields that grew so existing seeds remain stable.
-LEGACY_CONTENT_LIMITS = {
-    "npcs": 8,
-    "rumors": 6,
-}
-
 @dataclass(frozen=True)
 class Landmark:
     """A named point of interest placed on the map."""
@@ -297,14 +290,6 @@ def landmark_kind_label(kind: str, catalog: LocaleCatalog | None = None) -> str:
     return catalog.t(f"landmark.{kind}")
 
 
-def content_pool(catalog: LocaleCatalog, key: str) -> list[str]:
-    values = catalog.content(key)
-    legacy_limit = LEGACY_CONTENT_LIMITS.get(key)
-    if legacy_limit is not None:
-        return values[:legacy_limit]
-    return values
-
-
 def _terrain(
     seed: str,
     width: int,
@@ -452,12 +437,12 @@ def _landmarks(
                 kind=kind,
                 x=x,
                 y=y,
-                rumor=rng.choice(content_pool(catalog, "rumors")),
-                npc=rng.choice(content_pool(catalog, "npcs")),
-                hook=rng.choice(content_pool(catalog, "hooks")),
-                secret=rng.choice(content_pool(catalog, "secrets")),
-                danger=rng.choice(content_pool(catalog, "dangers")),
-                reward=rng.choice(content_pool(catalog, "rewards")),
+                rumor=rng.choice(catalog.content("rumors")),
+                npc=rng.choice(catalog.content("npcs")),
+                hook=rng.choice(catalog.content("hooks")),
+                secret=rng.choice(catalog.content("secrets")),
+                danger=rng.choice(catalog.content("dangers")),
+                reward=rng.choice(catalog.content("rewards")),
             )
         )
 
