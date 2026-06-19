@@ -14,8 +14,16 @@ class RendererTests(unittest.TestCase):
 
         self.assertIn("<!doctype html>", html)
         self.assertIn("Printable GM atlas", html)
-        self.assertIn("Session Places", html)
-        self.assertIn("DM secret", html)
+        self.assertIn("Landmarks", html)
+        self.assertIn("Secret", html)
+
+    def test_html_renderer_uses_spanish_locale(self):
+        world = generate_world(seed="atlas", width=36, height=16, landmark_count=3, locale="es")
+        html = render_html(world)
+
+        self.assertIn('<html lang="es">', html)
+        self.assertIn("Lugares destacados", html)
+        self.assertIn("Leyenda", html)
 
     def test_cli_writes_html(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -23,7 +31,7 @@ class RendererTests(unittest.TestCase):
             result = main(["--seed", "html", "--format", "html", "--output", str(output)])
 
             self.assertEqual(result, 0)
-            self.assertIn("Session Places", output.read_text(encoding="utf-8"))
+            self.assertIn("Landmarks", output.read_text(encoding="utf-8"))
 
     def test_cli_writes_png_when_pillow_is_installed(self):
         try:

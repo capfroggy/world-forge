@@ -9,26 +9,30 @@ import math
 import random
 from typing import Iterable
 
+from .i18n import DEFAULT_LOCALE, LocaleCatalog, load_locale
 
-TERRAIN_LEGEND = {
-    "~": "deep water",
-    ",": "shoals",
-    ".": "coast",
-    ";": "grassland",
-    ":": "drylands",
-    "^": "forest",
-    "A": "mountains",
-    "*": "snow",
-    "|": "river",
+TERRAIN_KEYS = {
+    "~": "terrain.deep_water",
+    ",": "terrain.shoals",
+    ".": "terrain.coast",
+    ";": "terrain.grassland",
+    ":": "terrain.drylands",
+    "^": "terrain.forest",
+    "A": "terrain.mountains",
+    "*": "terrain.snow",
+    "|": "terrain.river",
 }
 
-LANDMARK_LEGEND = {
-    "C": "capital",
-    "v": "village",
-    "X": "ruin",
-    "T": "tower",
-    "?": "oddity",
+LANDMARK_KEYS = {
+    "C": "landmark.capital",
+    "v": "landmark.village",
+    "X": "landmark.ruin",
+    "T": "landmark.tower",
+    "?": "landmark.oddity",
 }
+
+TERRAIN_LEGEND = {symbol: load_locale(DEFAULT_LOCALE).t(key) for symbol, key in TERRAIN_KEYS.items()}
+LANDMARK_LEGEND = {symbol: load_locale(DEFAULT_LOCALE).t(key) for symbol, key in LANDMARK_KEYS.items()}
 
 ANSI_COLORS = {
     "~": "\033[38;5;25m",
@@ -115,70 +119,12 @@ TITLE_NOUNS = [
     "Wilds",
 ]
 
-ODD_RUMORS = [
-    "The wells hum after midnight.",
-    "Nobody agrees where the oldest road begins.",
-    "A bell rings under the hills when fog arrives.",
-    "Cartographers keep losing the same peninsula.",
-    "The birds here migrate in perfect squares.",
-    "Every seventh bridge is older than the river.",
-]
-
-NPCS = [
-    "a tired caravan master with a perfect memory for roads",
-    "a river priest who collects forbidden maps",
-    "a masked captain looking for a missing heir",
-    "a cheerful innkeeper who hears too much",
-    "a disgraced knight guarding an unpaid debt",
-    "a young astronomer tracking an impossible star",
-    "a scarred hunter who knows the old paths",
-    "a quiet scribe carrying a sealed royal order",
-]
-
-HOOKS = [
-    "A patron offers coin for proof that the old stories are true.",
-    "Travelers vanished after following lights beyond the road.",
-    "A local leader needs neutral outsiders before a feud turns violent.",
-    "A sealed door has opened for the first time in a century.",
-    "Someone is buying maps of this place and burning every copy.",
-    "The next full moon will reveal a path that normally is not there.",
-    "A caravan arrived with no drivers and cargo from a ruined age.",
-    "The place is peaceful, but every child has drawn the same monster.",
-]
-
-SECRETS = [
-    "The ruler here is protecting an enemy spy.",
-    "The landmark is built on older stone from a lost empire.",
-    "A nearby spring is slowly changing anyone who drinks from it.",
-    "The local legend is false, but the cover-up is worse.",
-    "A hidden tunnel connects this place to another marked location.",
-    "The treasure everyone seeks is actually a prison key.",
-    "One landmark on the map does not exist unless it is being watched.",
-    "The oldest family in town serves something under the hills.",
-]
-
-DANGERS = [
-    "bandits with military discipline",
-    "restless dead that follow spoken names",
-    "a territorial beast drawn to metal",
-    "sinkholes hidden beneath moss and flowers",
-    "raiders using old border tunnels",
-    "a curse that makes compasses lie",
-    "poisonous fog rolling in from low ground",
-    "a noble house willing to start a war quietly",
-]
-
-REWARDS = [
-    "a safe route through hostile terrain",
-    "a minor magic item with a useful flaw",
-    "an alliance with a local faction",
-    "a chest of old coins and newer blackmail",
-    "the true name of a dangerous spirit",
-    "maps to another forgotten site",
-    "a loyal guide who knows the wilderness",
-    "a legal claim to land nobody wants yet",
-]
-
+# Expanded locale banks are already stored in locales/*.json, but v0.2 keeps
+# pre-i18n pool sizes for fields that grew so existing seeds remain stable.
+LEGACY_CONTENT_LIMITS = {
+    "npcs": 8,
+    "rumors": 6,
+}
 
 @dataclass(frozen=True)
 class Landmark:
@@ -207,57 +153,61 @@ class World:
     height: int
     tiles: tuple[str, ...]
     landmarks: tuple[Landmark, ...]
+    locale: str = DEFAULT_LOCALE
 
     def render_plain(self) -> str:
+        catalog = load_locale(self.locale)
         lines = [self.title, ""]
         lines.extend(self.tiles)
         lines.append("")
-        lines.append(legend_text())
+        lines.append(legend_text(catalog))
         if self.landmarks:
             lines.append("")
-            lines.append("Landmarks:")
+            lines.append(f"{catalog.t('export.landmarks_label')}:")
             for landmark in self.landmarks:
                 lines.append(
-                    f"- {landmark.symbol} {landmark.name} ({landmark.kind}) "
+                    f"- {landmark.symbol} {landmark.name} ({landmark_kind_label(landmark.kind, catalog)}) "
                     f"at {landmark.x},{landmark.y}: {landmark.hook}"
                 )
-                lines.append(f"  NPC: {landmark.npc}")
-                lines.append(f"  Rumor: {landmark.rumor}")
-                lines.append(f"  Danger: {landmark.danger}")
-                lines.append(f"  Reward: {landmark.reward}")
+                lines.append(f"  {catalog.t('export.npc_label')}: {landmark.npc}")
+                lines.append(f"  {catalog.t('export.rumor_label')}: {landmark.rumor}")
+                lines.append(f"  {catalog.t('export.danger_label')}: {landmark.danger}")
+                lines.append(f"  {catalog.t('export.reward_label')}: {landmark.reward}")
         return "\n".join(lines)
 
     def render_ansi(self) -> str:
+        catalog = load_locale(self.locale)
         lines = [self.title, ""]
         for row in self.tiles:
             lines.append("".join(_paint(char) for char in row))
         lines.append("")
-        lines.append(legend_text())
+        lines.append(legend_text(catalog))
         if self.landmarks:
             lines.append("")
-            lines.append("Landmarks:")
+            lines.append(f"{catalog.t('export.landmarks_label')}:")
             for landmark in self.landmarks:
                 lines.append(
-                    f"- {_paint(landmark.symbol)} {landmark.name} ({landmark.kind}) "
+                    f"- {_paint(landmark.symbol)} {landmark.name} ({landmark_kind_label(landmark.kind, catalog)}) "
                     f"at {landmark.x},{landmark.y}: {landmark.hook}"
                 )
-                lines.append(f"  NPC: {landmark.npc}")
-                lines.append(f"  Rumor: {landmark.rumor}")
-                lines.append(f"  Danger: {landmark.danger}")
-                lines.append(f"  Reward: {landmark.reward}")
+                lines.append(f"  {catalog.t('export.npc_label')}: {landmark.npc}")
+                lines.append(f"  {catalog.t('export.rumor_label')}: {landmark.rumor}")
+                lines.append(f"  {catalog.t('export.danger_label')}: {landmark.danger}")
+                lines.append(f"  {catalog.t('export.reward_label')}: {landmark.reward}")
         return "\n".join(lines)
 
     def to_markdown(self) -> str:
+        catalog = load_locale(self.locale)
         landmark_lines = "\n".join(
             (
-                f"- `{landmark.symbol}` **{landmark.name}** ({landmark.kind}) "
+                f"- `{landmark.symbol}` **{landmark.name}** ({landmark_kind_label(landmark.kind, catalog)}) "
                 f"at `{landmark.x},{landmark.y}`\n"
-                f"  - Hook: {landmark.hook}\n"
-                f"  - NPC: {landmark.npc}\n"
-                f"  - Rumor: {landmark.rumor}\n"
-                f"  - Secret: {landmark.secret}\n"
-                f"  - Danger: {landmark.danger}\n"
-                f"  - Reward: {landmark.reward}"
+                f"  - {catalog.t('export.hook_label')}: {landmark.hook}\n"
+                f"  - {catalog.t('export.npc_label')}: {landmark.npc}\n"
+                f"  - {catalog.t('export.rumor_label')}: {landmark.rumor}\n"
+                f"  - {catalog.t('export.secret_label')}: {landmark.secret}\n"
+                f"  - {catalog.t('export.danger_label')}: {landmark.danger}\n"
+                f"  - {catalog.t('export.reward_label')}: {landmark.reward}"
             )
             for landmark in self.landmarks
         )
@@ -268,15 +218,15 @@ class World:
             [
                 f"# {self.title}",
                 "",
-                f"Seed: `{self.seed}`",
+                f"{catalog.t('export.seed_label')}: `{self.seed}`",
                 "",
                 "```text",
                 *self.tiles,
                 "```",
                 "",
-                legend_text(),
+                legend_text(catalog),
                 "",
-                "## Landmarks",
+                f"## {catalog.t('export.landmarks_label')}",
                 "",
                 landmark_lines,
                 "",
@@ -294,10 +244,12 @@ def generate_world(
     width: int = 72,
     height: int = 28,
     landmark_count: int = 9,
+    locale: str = DEFAULT_LOCALE,
 ) -> World:
     """Generate a deterministic ASCII world."""
 
     seed = seed or _random_seed()
+    catalog = load_locale(locale)
     width = _clamp(width, 24, 140)
     height = _clamp(height, 12, 60)
     landmark_count = _clamp(landmark_count, 0, 30)
@@ -308,7 +260,7 @@ def generate_world(
     tiles = _terrain(seed, width, height, elevation, moisture)
     river_points = _river_points(seed, width, height, elevation, tiles)
     tiles = _overlay(tiles, river_points, "|")
-    landmarks = _landmarks(seed, rng, width, height, tiles, landmark_count)
+    landmarks = _landmarks(seed, rng, width, height, tiles, landmark_count, catalog)
     tiles = _place_landmarks(tiles, landmarks)
 
     title = _title(seed, rng)
@@ -319,13 +271,38 @@ def generate_world(
         height=height,
         tiles=tuple("".join(row) for row in tiles),
         landmarks=tuple(landmarks),
+        locale=locale,
     )
 
 
-def legend_text() -> str:
-    terrain = ", ".join(f"{symbol} {name}" for symbol, name in TERRAIN_LEGEND.items())
-    landmarks = ", ".join(f"{symbol} {name}" for symbol, name in LANDMARK_LEGEND.items())
-    return f"Legend: {terrain}, {landmarks}"
+def terrain_legend(catalog: LocaleCatalog | None = None) -> dict[str, str]:
+    catalog = catalog or load_locale(DEFAULT_LOCALE)
+    return {symbol: catalog.t(key) for symbol, key in TERRAIN_KEYS.items()}
+
+
+def landmark_legend(catalog: LocaleCatalog | None = None) -> dict[str, str]:
+    catalog = catalog or load_locale(DEFAULT_LOCALE)
+    return {symbol: catalog.t(key) for symbol, key in LANDMARK_KEYS.items()}
+
+
+def legend_text(catalog: LocaleCatalog | None = None) -> str:
+    catalog = catalog or load_locale(DEFAULT_LOCALE)
+    terrain = ", ".join(f"{symbol} {name}" for symbol, name in terrain_legend(catalog).items())
+    landmarks = ", ".join(f"{symbol} {name}" for symbol, name in landmark_legend(catalog).items())
+    return f"{catalog.t('export.legend_label')}: {terrain}, {landmarks}"
+
+
+def landmark_kind_label(kind: str, catalog: LocaleCatalog | None = None) -> str:
+    catalog = catalog or load_locale(DEFAULT_LOCALE)
+    return catalog.t(f"landmark.{kind}")
+
+
+def content_pool(catalog: LocaleCatalog, key: str) -> list[str]:
+    values = catalog.content(key)
+    legacy_limit = LEGACY_CONTENT_LIMITS.get(key)
+    if legacy_limit is not None:
+        return values[:legacy_limit]
+    return values
 
 
 def _terrain(
@@ -445,6 +422,7 @@ def _landmarks(
     height: int,
     tiles: list[list[str]],
     landmark_count: int,
+    catalog: LocaleCatalog,
 ) -> list[Landmark]:
     land = [
         (x, y)
@@ -474,12 +452,12 @@ def _landmarks(
                 kind=kind,
                 x=x,
                 y=y,
-                rumor=rng.choice(ODD_RUMORS),
-                npc=rng.choice(NPCS),
-                hook=rng.choice(HOOKS),
-                secret=rng.choice(SECRETS),
-                danger=rng.choice(DANGERS),
-                reward=rng.choice(REWARDS),
+                rumor=rng.choice(content_pool(catalog, "rumors")),
+                npc=rng.choice(content_pool(catalog, "npcs")),
+                hook=rng.choice(content_pool(catalog, "hooks")),
+                secret=rng.choice(content_pool(catalog, "secrets")),
+                danger=rng.choice(content_pool(catalog, "dangers")),
+                reward=rng.choice(content_pool(catalog, "rewards")),
             )
         )
 

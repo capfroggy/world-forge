@@ -1,0 +1,139 @@
+{
+  "cli": {
+    "description": "Genera mundos de fantasía deterministas y compactos para campañas de mesa.",
+    "flags": {
+      "seed": "Texto semilla para generar mundos deterministas.",
+      "width": "Ancho del mapa, de 24 a 140.",
+      "height": "Alto del mapa, de 12 a 60.",
+      "landmarks": "Número de lugares con nombre a agregar, de 0 a 30.",
+      "format": "Formato de salida.",
+      "locale": "Idioma de salida: en o es.",
+      "audience": "Audiencia del contenido: gm (con secretos) o player (seguro para compartir).",
+      "tile_size": "Tamaño en píxeles de cada celda del PNG, de 6 a 28.",
+      "output": "Escribe la salida a un archivo."
+    },
+    "errors": {
+      "png_requires_output": "--format png requiere --output",
+      "unsupported_locale": "Idioma no soportado '{locale}'. Disponibles: {available}."
+    }
+  },
+  "format": {
+    "plain": "texto",
+    "ansi": "ansi",
+    "markdown": "markdown",
+    "json": "json",
+    "json_deprecated_note": "--format json está obsoleto; usa --format campaign.",
+    "campaign": "campaign",
+    "html": "html",
+    "png": "png"
+  },
+  "terrain": {
+    "deep_water": "aguas profundas",
+    "shoals": "bajíos",
+    "coast": "costa",
+    "grassland": "pradera",
+    "drylands": "tierras áridas",
+    "forest": "bosque",
+    "mountains": "montañas",
+    "snow": "nieve",
+    "river": "río"
+  },
+  "landmark": {
+    "capital": "capital",
+    "village": "aldea",
+    "ruin": "ruina",
+    "tower": "torre",
+    "oddity": "rareza"
+  },
+  "export": {
+    "legend_label": "Leyenda",
+    "landmarks_label": "Lugares destacados",
+    "hook_label": "Gancho",
+    "npc_label": "PNJ",
+    "rumor_label": "Rumor",
+    "secret_label": "Secreto",
+    "danger_label": "Peligro",
+    "reward_label": "Recompensa",
+    "seed_label": "Semilla",
+    "audience_player_note": "Copia segura para jugadores — sin secretos de DM.",
+    "printable_gm_atlas": "Atlas imprimible para DM",
+    "printable_gm_map": "Mapa imprimible para DM",
+    "gm_notes_label": "Notas del DM"
+  },
+  "content": {
+    "npcs": [
+      "un caravanero agotado con memoria perfecta para los caminos",
+      "un sacerdote del río que colecciona mapas prohibidos",
+      "una capitana enmascarada que busca a un heredero perdido",
+      "una posadera alegre que escucha demasiado",
+      "un caballero caído que custodia una deuda impaga",
+      "una joven astrónoma que sigue una estrella imposible",
+      "un cazador marcado por cicatrices que conoce los senderos antiguos",
+      "una escriba silenciosa que carga una orden real sellada",
+      "una mercenaria retirada que solo acepta trabajos que la aburran",
+      "un niño que sigue dibujando una puerta que todavía no existe",
+      "un mercader que paga demasiado bien por rocas muy específicas",
+      "un sacerdote que dejó de creer pero mantuvo el horario",
+      "una cartógrafa que se niega a terminar un mapa en concreto",
+      "un soldado contando los días para una baja que se sigue postergando",
+      "un apicultor cuyas colmenas producen algo que no es del todo miel",
+      "un juez que jamás ha fallado en contra de la misma familia"
+    ],
+    "hooks": [
+      "Un mecenas ofrece monedas por pruebas de que las viejas historias son ciertas.",
+      "Viajeros desaparecieron tras seguir luces más allá del camino.",
+      "Una líder local necesita forasteros neutrales antes de que una disputa se vuelva violenta.",
+      "Una puerta sellada se ha abierto por primera vez en un siglo.",
+      "Alguien está comprando mapas de este lugar y quemando cada copia.",
+      "La próxima luna llena revelará un sendero que normalmente no está ahí.",
+      "Una caravana llegó sin conductores y con carga de una era en ruinas.",
+      "El lugar es pacífico, pero todos los niños han dibujado el mismo monstruo."
+    ],
+    "rumors": [
+      "Los pozos zumban después de la medianoche.",
+      "Nadie se pone de acuerdo sobre dónde empieza el camino más antiguo.",
+      "Una campana suena bajo las colinas cuando llega la niebla.",
+      "Los cartógrafos siguen perdiendo la misma península.",
+      "Las aves migran aquí formando cuadrados perfectos.",
+      "Cada séptimo puente es más viejo que el río.",
+      "El cobrador de peaje no ha envejecido en tres generaciones.",
+      "Cada mapa de este lugar no se pone de acuerdo en dónde queda el norte.",
+      "El pan local nunca se pone duro, y nadie pregunta por qué.",
+      "Los perros se niegan a cruzar el puente viejo después del anochecer.",
+      "El reloj del pueblo dio las trece exactamente una vez, y todos lo recuerdan distinto.",
+      "Las cartas enviadas desde aquí siempre llegan un día antes de ser escritas.",
+      "El agua del pozo sabe a una lluvia que todavía no ha caído.",
+      "Nadie en el pueblo dice en voz alta el nombre del alcalde anterior."
+    ],
+    "secrets": [
+      "La gobernante local está protegiendo a una espía enemiga.",
+      "El lugar está construido sobre piedras más antiguas de un imperio perdido.",
+      "Un manantial cercano está cambiando lentamente a quien bebe de él.",
+      "La leyenda local es falsa, pero el encubrimiento es peor.",
+      "Un túnel oculto conecta este lugar con otro sitio marcado.",
+      "El tesoro que todos buscan es en realidad la llave de una prisión.",
+      "Un punto del mapa no existe a menos que alguien lo esté mirando.",
+      "La familia más antigua del pueblo sirve a algo bajo las colinas."
+    ],
+    "dangers": [
+      "bandidos con disciplina militar",
+      "muertos inquietos que siguen nombres pronunciados",
+      "una bestia territorial atraída por el metal",
+      "sumideros ocultos bajo musgo y flores",
+      "asaltantes usando viejos túneles fronterizos",
+      "una maldición que hace mentir a las brújulas",
+      "niebla venenosa que avanza desde las tierras bajas",
+      "una casa noble dispuesta a iniciar una guerra en silencio"
+    ],
+    "rewards": [
+      "una ruta segura por terreno hostil",
+      "un objeto mágico menor con un defecto útil",
+      "una alianza con una facción local",
+      "un cofre de monedas antiguas y chantaje reciente",
+      "el nombre verdadero de un espíritu peligroso",
+      "mapas hacia otro sitio olvidado",
+      "una guía leal que conoce las tierras salvajes",
+      "un reclamo legal sobre tierras que nadie quiere todavía"
+    ]
+  }
+}

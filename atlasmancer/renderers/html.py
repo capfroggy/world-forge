@@ -4,7 +4,8 @@ from __future__ import annotations
 
 from html import escape
 
-from atlasmancer.generator import LANDMARK_LEGEND, TERRAIN_LEGEND, World
+from atlasmancer.generator import World, landmark_kind_label, landmark_legend, terrain_legend
+from atlasmancer.i18n import load_locale
 
 
 CLASS_BY_SYMBOL = {
@@ -28,15 +29,17 @@ CLASS_BY_SYMBOL = {
 def render_html(world: World) -> str:
     """Render a self-contained printable HTML atlas page."""
 
+    catalog = load_locale(world.locale)
+    landmark_labels = landmark_legend(catalog)
     cells = []
     for row in world.tiles:
         for char in row:
             css_class = CLASS_BY_SYMBOL.get(char, "grass")
-            label = char if char in LANDMARK_LEGEND else ""
+            label = char if char in landmark_labels else ""
             cells.append(f'<span class="tile {css_class}">{escape(label)}</span>')
 
     legend_items = []
-    for symbol, name in {**TERRAIN_LEGEND, **LANDMARK_LEGEND}.items():
+    for symbol, name in {**terrain_legend(catalog), **landmark_labels}.items():
         css_class = CLASS_BY_SYMBOL.get(symbol, "grass")
         legend_items.append(
             f'<span class="legend-item"><span class="swatch {css_class}">{escape(symbol)}</span>{escape(name)}</span>'
@@ -49,13 +52,13 @@ def render_html(world: World) -> str:
                 [
                     '<article class="landmark">',
                     f"<h3>{escape(landmark.symbol)} {escape(landmark.name)}</h3>",
-                    f"<p><strong>{escape(landmark.kind.title())}</strong> at {landmark.x}, {landmark.y}</p>",
-                    f"<p><b>Hook:</b> {escape(landmark.hook)}</p>",
-                    f"<p><b>NPC:</b> {escape(landmark.npc)}</p>",
-                    f"<p><b>Rumor:</b> {escape(landmark.rumor)}</p>",
-                    f"<p><b>Danger:</b> {escape(landmark.danger)}</p>",
-                    f"<p><b>Reward:</b> {escape(landmark.reward)}</p>",
-                    f'<p class="dm"><b>DM secret:</b> {escape(landmark.secret)}</p>',
+                    f"<p><strong>{escape(landmark_kind_label(landmark.kind, catalog).title())}</strong> at {landmark.x}, {landmark.y}</p>",
+                    f"<p><b>{escape(catalog.t('export.hook_label'))}:</b> {escape(landmark.hook)}</p>",
+                    f"<p><b>{escape(catalog.t('export.npc_label'))}:</b> {escape(landmark.npc)}</p>",
+                    f"<p><b>{escape(catalog.t('export.rumor_label'))}:</b> {escape(landmark.rumor)}</p>",
+                    f"<p><b>{escape(catalog.t('export.danger_label'))}:</b> {escape(landmark.danger)}</p>",
+                    f"<p><b>{escape(catalog.t('export.reward_label'))}:</b> {escape(landmark.reward)}</p>",
+                    f'<p class="dm"><b>{escape(catalog.t("export.secret_label"))}:</b> {escape(landmark.secret)}</p>',
                     "</article>",
                 ]
             )
@@ -64,7 +67,7 @@ def render_html(world: World) -> str:
     return "\n".join(
         [
             "<!doctype html>",
-            '<html lang="en">',
+            f'<html lang="{escape(catalog.locale)}">',
             "<head>",
             '<meta charset="utf-8">',
             '<meta name="viewport" content="width=device-width, initial-scale=1">',
@@ -77,19 +80,20 @@ def render_html(world: World) -> str:
             '<main class="page">',
             "<header>",
             f"<h1>{escape(world.title)}</h1>",
-            f"<p>Seed <code>{escape(world.seed)}</code> | {world.width} x {world.height} | Printable GM atlas</p>",
+            f"<p>{escape(catalog.t('export.seed_label'))} <code>{escape(world.seed)}</code> | {world.width} x {world.height} | {escape(catalog.t('export.printable_gm_atlas'))}</p>",
             "</header>",
             '<section class="layout">',
             '<section class="map-panel" aria-label="World map">',
             '<div class="map">',
             "".join(cells),
             "</div>",
+            f'<h2 class="legend-title">{escape(catalog.t("export.legend_label"))}</h2>',
             '<div class="legend">',
             "".join(legend_items),
             "</div>",
             "</section>",
             '<aside class="notes">',
-            "<h2>Session Places</h2>",
+            f"<h2>{escape(catalog.t('export.landmarks_label'))}</h2>",
             "".join(landmark_cards),
             "</aside>",
             "</section>",
@@ -175,6 +179,10 @@ header p {{
   gap: 8px 12px;
   margin-top: 12px;
   font-size: 13px;
+}}
+.legend-title {{
+  margin: 12px 0 0;
+  font-size: 16px;
 }}
 .legend-item {{
   display: inline-flex;

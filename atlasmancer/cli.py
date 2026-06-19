@@ -7,53 +7,76 @@ from pathlib import Path
 import sys
 
 from .generator import generate_world
+from .i18n import DEFAULT_LOCALE, UnsupportedLocaleError, available_locales, load_locale
 from .renderers.html import render_html
 
 
-def build_parser() -> argparse.ArgumentParser:
+def build_parser(locale: str = DEFAULT_LOCALE) -> argparse.ArgumentParser:
+    catalog = load_locale(locale)
     parser = argparse.ArgumentParser(
         prog="atlasmancer",
-        description="Generate tiny deterministic fantasy worlds for tabletop campaigns.",
+        description=catalog.t("cli.description"),
     )
-    parser.add_argument("--seed", help="Seed text for deterministic worlds.")
-    parser.add_argument("--width", type=int, default=72, help="Map width, from 24 to 140.")
-    parser.add_argument("--height", type=int, default=28, help="Map height, from 12 to 60.")
+    parser.add_argument("--seed", help=catalog.t("cli.flags.seed"))
+    parser.add_argument("--width", type=int, default=72, help=catalog.t("cli.flags.width"))
+    parser.add_argument("--height", type=int, default=28, help=catalog.t("cli.flags.height"))
     parser.add_argument(
         "--landmarks",
         type=int,
         default=9,
-        help="Number of named places to add, from 0 to 30.",
+        help=catalog.t("cli.flags.landmarks"),
     )
     parser.add_argument(
         "--format",
         choices=("plain", "ansi", "markdown", "json", "html", "png"),
         default="plain",
-        help="Output format.",
+        help=catalog.t("cli.flags.format"),
+    )
+    parser.add_argument(
+        "--locale",
+        default=DEFAULT_LOCALE,
+        help=catalog.t("cli.flags.locale"),
     )
     parser.add_argument(
         "--tile-size",
         type=int,
         default=12,
-        help="Pixel size for PNG tiles, from 6 to 28.",
+        help=catalog.t("cli.flags.tile_size"),
     )
-    parser.add_argument("--output", type=Path, help="Write output to a file.")
+    parser.add_argument("--output", type=Path, help=catalog.t("cli.flags.output"))
     return parser
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = build_parser()
+    argv = list(sys.argv[1:] if argv is None else argv)
+    requested_locale = _requested_locale(argv)
+    parser_locale = requested_locale if requested_locale in available_locales() else DEFAULT_LOCALE
+    parser = build_parser(parser_locale)
     args = parser.parse_args(argv)
+    catalog = load_locale(parser_locale)
+
+    try:
+        load_locale(args.locale)
+    except UnsupportedLocaleError:
+        parser.error(
+            catalog.t(
+                "cli.errors.unsupported_locale",
+                locale=args.locale,
+                available=", ".join(available_locales()),
+            )
+        )
 
     world = generate_world(
         seed=args.seed,
         width=args.width,
         height=args.height,
         landmark_count=args.landmarks,
+        locale=args.locale,
     )
 
     if args.format == "png":
         if not args.output:
-            parser.error("--format png requires --output")
+            parser.error(catalog.t("cli.errors.png_requires_output"))
         from .renderers.png import render_png
 
         try:
@@ -79,3 +102,10 @@ def main(argv: list[str] | None = None) -> int:
         sys.stdout.write(output + "\n")
 
     return 0
+
+
+def _requested_locale(argv: list[str]) -> str:
+    parser = argparse.ArgumentParser(add_help=False)
+    parser.add_argument("--locale", default=DEFAULT_LOCALE)
+    args, _ = parser.parse_known_args(argv)
+    return args.locale

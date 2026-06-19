@@ -5,7 +5,8 @@ from __future__ import annotations
 from pathlib import Path
 import textwrap
 
-from atlasmancer.generator import LANDMARK_LEGEND, TERRAIN_LEGEND, World
+from atlasmancer.generator import World, landmark_legend, terrain_legend
+from atlasmancer.i18n import load_locale
 
 
 PALETTE = {
@@ -45,6 +46,7 @@ def render_png(world: World, output: str | Path, tile_size: int = 12) -> None:
         ) from exc
 
     tile_size = max(6, min(28, tile_size))
+    catalog = load_locale(world.locale)
     margin = 46
     header = 86
     footer = 38
@@ -53,7 +55,9 @@ def render_png(world: World, output: str | Path, tile_size: int = 12) -> None:
     map_width = world.width * tile_size
     map_height = world.height * tile_size
     image_width = margin * 2 + map_width + gap + sidebar
-    legend_rows = (len(TERRAIN_LEGEND) + len(LANDMARK_LEGEND) + 1) // 2
+    terrain_labels = terrain_legend(catalog)
+    landmark_labels = landmark_legend(catalog)
+    legend_rows = (len(terrain_labels) + len(landmark_labels) + 1) // 2
     sidebar_entries = min(len(world.landmarks), 8)
     sidebar_height = margin + header + legend_rows * 24 + 88 + sidebar_entries * 86 + footer
     image_height = max(margin + header + map_height + footer, sidebar_height, 760)
@@ -73,7 +77,7 @@ def render_png(world: World, output: str | Path, tile_size: int = 12) -> None:
     draw.text((margin, 28), world.title, fill=(54, 38, 21), font=title_font)
     draw.text(
         (margin, 66),
-        f"Seed: {world.seed} | {world.width} x {world.height} | Printable GM map",
+        f"{catalog.t('export.seed_label')}: {world.seed} | {world.width} x {world.height} | {catalog.t('export.printable_gm_map')}",
         fill=(91, 69, 43),
         font=subtitle_font,
     )
@@ -88,7 +92,15 @@ def render_png(world: World, output: str | Path, tile_size: int = 12) -> None:
     notes_top = map_y + map_height + 30
     notes_bottom = image_height - margin - 24
     if notes_bottom - notes_top > 90:
-        _draw_notes_area(draw, map_x, notes_top, map_width, notes_bottom - notes_top, heading_font)
+        _draw_notes_area(
+            draw,
+            map_x,
+            notes_top,
+            map_width,
+            notes_bottom - notes_top,
+            heading_font,
+            catalog.t("export.gm_notes_label"),
+        )
 
     side_x = map_x + map_width + gap
     side_y = map_y - 12
@@ -100,6 +112,7 @@ def render_png(world: World, output: str | Path, tile_size: int = 12) -> None:
         side_y + 18,
         sidebar - 40,
         image_height - margin - 20,
+        catalog,
         heading_font,
         body_font,
         small_font,
@@ -189,34 +202,36 @@ def _draw_sidebar(
     y: int,
     width: int,
     max_y: int,
+    catalog,
     heading_font,
     body_font,
     small_font,
 ) -> None:
-    draw.text((x, y), "Legend", fill=(54, 38, 21), font=heading_font)
+    draw.text((x, y), catalog.t("export.legend_label"), fill=(54, 38, 21), font=heading_font)
     cursor_y = y + 34
-    legend = {**TERRAIN_LEGEND, **LANDMARK_LEGEND}
+    landmark_labels = landmark_legend(catalog)
+    legend = {**terrain_legend(catalog), **landmark_labels}
     for index, (symbol, name) in enumerate(legend.items()):
         col = index % 2
         row = index // 2
         item_x = x + col * (width // 2)
         item_y = cursor_y + row * 24
         draw.rectangle((item_x, item_y, item_x + 17, item_y + 17), fill=PALETTE.get(symbol, PALETTE[";"]), outline=(78, 56, 32))
-        _center_text(draw, symbol if symbol in LANDMARK_LEGEND else "", item_x + 8, item_y + 8, small_font, fill=(30, 22, 14))
+        _center_text(draw, symbol if symbol in landmark_labels else "", item_x + 8, item_y + 8, small_font, fill=(30, 22, 14))
         draw.text((item_x + 24, item_y), name, fill=(54, 38, 21), font=small_font)
 
     cursor_y += ((len(legend) + 1) // 2) * 24 + 22
-    draw.text((x, cursor_y), "Session Places", fill=(54, 38, 21), font=heading_font)
+    draw.text((x, cursor_y), catalog.t("export.landmarks_label"), fill=(54, 38, 21), font=heading_font)
     cursor_y += 34
 
     for landmark in world.landmarks[:8]:
         heading = f"{landmark.symbol} {landmark.name} ({landmark.kind})"
         draw.text((x, cursor_y), heading, fill=(69, 39, 28), font=body_font)
         cursor_y += 20
-        for line in _wrap(f"Hook: {landmark.hook}", 48)[:2]:
+        for line in _wrap(f"{catalog.t('export.hook_label')}: {landmark.hook}", 48)[:2]:
             draw.text((x + 8, cursor_y), line, fill=(54, 38, 21), font=small_font)
             cursor_y += 16
-        for line in _wrap(f"Danger: {landmark.danger}", 48)[:1]:
+        for line in _wrap(f"{catalog.t('export.danger_label')}: {landmark.danger}", 48)[:1]:
             draw.text((x + 8, cursor_y), line, fill=(95, 41, 32), font=small_font)
             cursor_y += 16
         cursor_y += 8
@@ -240,8 +255,8 @@ def _draw_compass(draw, x: int, y: int) -> None:
     draw.text((x + 17, y - 11), "N", fill=(58, 41, 24))
 
 
-def _draw_notes_area(draw, x: int, y: int, width: int, height: int, heading_font) -> None:
-    draw.text((x, y), "GM Notes", fill=(54, 38, 21), font=heading_font)
+def _draw_notes_area(draw, x: int, y: int, width: int, height: int, heading_font, label: str) -> None:
+    draw.text((x, y), label, fill=(54, 38, 21), font=heading_font)
     line_y = y + 42
     while line_y < y + height - 8:
         draw.line((x, line_y, x + width, line_y), fill=(174, 135, 80), width=1)

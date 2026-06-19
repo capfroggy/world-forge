@@ -1,0 +1,139 @@
+{
+  "cli": {
+    "description": "Generate tiny deterministic fantasy worlds for tabletop campaigns.",
+    "flags": {
+      "seed": "Seed text for deterministic worlds.",
+      "width": "Map width, from 24 to 140.",
+      "height": "Map height, from 12 to 60.",
+      "landmarks": "Number of named places to add, from 0 to 30.",
+      "format": "Output format.",
+      "locale": "Output language: en or es.",
+      "audience": "Content audience: gm (full secrets) or player (safe to share).",
+      "tile_size": "Pixel size for PNG tiles, from 6 to 28.",
+      "output": "Write output to a file."
+    },
+    "errors": {
+      "png_requires_output": "--format png requires --output",
+      "unsupported_locale": "Unsupported locale '{locale}'. Available: {available}."
+    }
+  },
+  "format": {
+    "plain": "plain",
+    "ansi": "ansi",
+    "markdown": "markdown",
+    "json": "json",
+    "json_deprecated_note": "--format json is deprecated; use --format campaign.",
+    "campaign": "campaign",
+    "html": "html",
+    "png": "png"
+  },
+  "terrain": {
+    "deep_water": "deep water",
+    "shoals": "shoals",
+    "coast": "coast",
+    "grassland": "grassland",
+    "drylands": "drylands",
+    "forest": "forest",
+    "mountains": "mountains",
+    "snow": "snow",
+    "river": "river"
+  },
+  "landmark": {
+    "capital": "capital",
+    "village": "village",
+    "ruin": "ruin",
+    "tower": "tower",
+    "oddity": "oddity"
+  },
+  "export": {
+    "legend_label": "Legend",
+    "landmarks_label": "Landmarks",
+    "hook_label": "Hook",
+    "npc_label": "NPC",
+    "rumor_label": "Rumor",
+    "secret_label": "Secret",
+    "danger_label": "Danger",
+    "reward_label": "Reward",
+    "seed_label": "Seed",
+    "audience_player_note": "Player-safe copy — no GM secrets included.",
+    "printable_gm_atlas": "Printable GM atlas",
+    "printable_gm_map": "Printable GM map",
+    "gm_notes_label": "GM Notes"
+  },
+  "content": {
+    "npcs": [
+      "a tired caravan master with a perfect memory for roads",
+      "a river priest who collects forbidden maps",
+      "a masked captain looking for a missing heir",
+      "a cheerful innkeeper who hears too much",
+      "a disgraced knight guarding an unpaid debt",
+      "a young astronomer tracking an impossible star",
+      "a scarred hunter who knows the old paths",
+      "a quiet scribe carrying a sealed royal order",
+      "a retired mercenary who only takes jobs that bore her",
+      "a child who keeps drawing a door that isn't there yet",
+      "a merchant who pays too well for very specific rocks",
+      "a priest who stopped believing but kept the schedule",
+      "a cartographer who refuses to finish one particular map",
+      "a soldier counting down to a discharge that keeps getting delayed",
+      "a beekeeper whose hives produce something that isn't quite honey",
+      "a judge who has never once ruled against the same family"
+    ],
+    "hooks": [
+      "A patron offers coin for proof that the old stories are true.",
+      "Travelers vanished after following lights beyond the road.",
+      "A local leader needs neutral outsiders before a feud turns violent.",
+      "A sealed door has opened for the first time in a century.",
+      "Someone is buying maps of this place and burning every copy.",
+      "The next full moon will reveal a path that normally is not there.",
+      "A caravan arrived with no drivers and cargo from a ruined age.",
+      "The place is peaceful, but every child has drawn the same monster."
+    ],
+    "rumors": [
+      "The wells hum after midnight.",
+      "Nobody agrees where the oldest road begins.",
+      "A bell rings under the hills when fog arrives.",
+      "Cartographers keep losing the same peninsula.",
+      "The birds here migrate in perfect squares.",
+      "Every seventh bridge is older than the river.",
+      "The toll collector hasn't aged in three generations.",
+      "Every map of this place disagrees about which way is north.",
+      "The local bread never goes stale, and nobody asks why.",
+      "Dogs refuse to cross the old bridge after dark.",
+      "The town clock has struck thirteen exactly once, and everyone remembers it differently.",
+      "Letters sent from here always arrive a day before they were written.",
+      "The well water tastes like rain that hasn't fallen yet.",
+      "Nobody in town will say the previous mayor's name out loud."
+    ],
+    "secrets": [
+      "The ruler here is protecting an enemy spy.",
+      "The landmark is built on older stone from a lost empire.",
+      "A nearby spring is slowly changing anyone who drinks from it.",
+      "The local legend is false, but the cover-up is worse.",
+      "A hidden tunnel connects this place to another marked location.",
+      "The treasure everyone seeks is actually a prison key.",
+      "One landmark on the map does not exist unless it is being watched.",
+      "The oldest family in town serves something under the hills."
+    ],
+    "dangers": [
+      "bandits with military discipline",
+      "restless dead that follow spoken names",
+      "a territorial beast drawn to metal",
+      "sinkholes hidden beneath moss and flowers",
+      "raiders using old border tunnels",
+      "a curse that makes compasses lie",
+      "poisonous fog rolling in from low ground",
+      "a noble house willing to start a war quietly"
+    ],
+    "rewards": [
+      "a safe route through hostile terrain",
+      "a minor magic item with a useful flaw",
+      "an alliance with a local faction",
+      "a chest of old coins and newer blackmail",
+      "the true name of a dangerous spirit",
+      "maps to another forgotten site",
+      "a loyal guide who knows the wilderness",
+      "a legal claim to land nobody wants yet"
+    ]
+  }
+}
