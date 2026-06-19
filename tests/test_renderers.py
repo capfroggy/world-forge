@@ -2,9 +2,9 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from world_forge import generate_world
-from world_forge.cli import main
-from world_forge.renderers.html import render_html
+from atlasmancer import generate_world
+from atlasmancer.cli import main
+from atlasmancer.renderers.html import render_html
 
 
 class RendererTests(unittest.TestCase):

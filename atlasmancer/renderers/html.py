@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from html import escape
 
-from world_forge.generator import LANDMARK_LEGEND, TERRAIN_LEGEND, World
+from atlasmancer.generator import LANDMARK_LEGEND, TERRAIN_LEGEND, World
 
 
 CLASS_BY_SYMBOL = {

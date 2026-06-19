@@ -1,7 +1,7 @@
-"""Public package interface for world-forge."""
+"""Public package interface for Atlasmancer."""
 
 from .generator import World, generate_world
 
 __all__ = ["World", "generate_world"]
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"

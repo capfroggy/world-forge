@@ -3,9 +3,9 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "world-forge"
-version = "0.1.0"
-description = "A tiny deterministic ASCII world generator for terminal explorers."
+name = "atlasmancer"
+version = "0.2.0"
+description = "A free, open-source worldbuilding tool for tabletop campaigns."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
@@ -32,12 +32,12 @@ image = ["pillow>=10,<13"]
 dev = ["build", "coverage>=7,<8", "ruff", "tox>=4,<5"]
 
 [project.urls]
-Homepage = "https://github.com/capfroggy/world-forge"
-Repository = "https://github.com/capfroggy/world-forge"
-Issues = "https://github.com/capfroggy/world-forge/issues"
+Homepage = "https://Atlasmancer.gt.tc"
+Repository = "https://github.com/capfroggy/atlasmancer"
+Issues = "https://github.com/capfroggy/atlasmancer/issues"
 
 [project.scripts]
-world-forge = "world_forge.cli:main"
+atlasmancer = "atlasmancer.cli:main"
 
 [tool.setuptools.packages.find]
-include = ["world_forge*"]
+include = ["atlasmancer*"]

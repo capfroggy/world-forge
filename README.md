@@ -1,14 +1,16 @@
 # Atlasmancer
 
 Atlasmancer is a free, open-source worldbuilding tool for tabletop campaigns.
-The current technical preview still ships as the `world-forge` Python CLI while
-the project is being renamed.
+The current technical preview ships as a Python CLI while the larger local-first
+web app is being designed.
+
+Future web home: `https://Atlasmancer.gt.tc`
 
 Give it a seed and it creates a little world with terrain, landmarks, names, a
 legend, and exportable output.
 
 ```bash
-python -m world_forge --seed ember-reef --width 64 --height 24
+python -m atlasmancer --seed ember-reef --width 64 --height 24
 ```
 
 ```text
@@ -50,30 +52,30 @@ python -m pip install -e .
 Then run:
 
 ```bash
-world-forge --seed midnight-lantern
+atlasmancer --seed midnight-lantern
 ```
 
 You can also run it without installing:
 
 ```bash
-python -m world_forge --seed midnight-lantern
+python -m atlasmancer --seed midnight-lantern
 ```
 
 ## Usage
 
 ```bash
-world-forge --help
-world-forge --seed "salt road" --width 72 --height 28 --landmarks 10
-world-forge --format markdown --output world.md
-world-forge --format html --output world.html
-world-forge --format json --output world.json
+atlasmancer --help
+atlasmancer --seed "salt road" --width 72 --height 28 --landmarks 10
+atlasmancer --format markdown --output world.md
+atlasmancer --format html --output world.html
+atlasmancer --format json --output world.json
 ```
 
 For printable PNG maps:
 
 ```bash
 python -m pip install -e .[image]
-world-forge --seed "dnd-campaign-01" --width 96 --height 48 --landmarks 14 --format png --output world.png
+atlasmancer --seed "dnd-campaign-01" --width 96 --height 48 --landmarks 14 --format png --output world.png
 ```
 
 Options:

@@ -1,4 +1,4 @@
-"""Command-line interface for world-forge."""
+"""Command-line interface for Atlasmancer."""
 
 from __future__ import annotations
 
@@ -12,8 +12,8 @@ from .renderers.html import render_html
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        prog="world-forge",
-        description="Generate tiny deterministic ASCII worlds.",
+        prog="atlasmancer",
+        description="Generate tiny deterministic fantasy worlds for tabletop campaigns.",
     )
     parser.add_argument("--seed", help="Seed text for deterministic worlds.")
     parser.add_argument("--width", type=int, default=72, help="Map width, from 24 to 140.")

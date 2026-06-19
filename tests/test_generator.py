@@ -1,7 +1,7 @@
 import json
 import unittest
 
-from world_forge import generate_world
+from atlasmancer import generate_world
 
 
 class GenerateWorldTests(unittest.TestCase):

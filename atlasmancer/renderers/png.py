@@ -5,7 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 import textwrap
 
-from world_forge.generator import LANDMARK_LEGEND, TERRAIN_LEGEND, World
+from atlasmancer.generator import LANDMARK_LEGEND, TERRAIN_LEGEND, World
 
 
 PALETTE = {
