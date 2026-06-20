@@ -38,6 +38,14 @@ class GenerateWorldTests(unittest.TestCase):
         self.assertIn("NPC:", markdown)
         self.assertIn("Danger:", markdown)
 
+    def test_markdown_export_lists_regions(self):
+        world = generate_world(seed="regions-markdown", width=72, height=28, landmark_count=2)
+        markdown = world.to_markdown()
+
+        self.assertIn("## Regions", markdown)
+        self.assertIn(world.regions[0].name, markdown)
+        self.assertIn(world.regions[0].description, markdown)
+
     def test_player_audience_hides_gm_only_fields(self):
         world = generate_world(seed="playable", width=36, height=16, landmark_count=2)
 

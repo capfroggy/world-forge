@@ -2,7 +2,6 @@ import json
 import tempfile
 import unittest
 from contextlib import redirect_stderr, redirect_stdout
-from dataclasses import replace
 from io import StringIO
 from pathlib import Path
 
@@ -22,7 +21,7 @@ class CampaignLoaderTests(unittest.TestCase):
 
             reopened = load_campaign(path)
 
-        self.assertEqual(reopened, replace(original, regions=()))
+        self.assertEqual(reopened, original)
 
     def test_v0_2_schema_is_still_supported(self):
         original = generate_world(seed="v0-2-save", width=40, height=18, landmark_count=5, locale="en")
@@ -35,7 +34,15 @@ class CampaignLoaderTests(unittest.TestCase):
 
             reopened = load_campaign(path)
 
-        self.assertEqual(reopened, replace(original, regions=()))
+        self.assertEqual(reopened, original)
+
+    def test_old_campaign_fixture_without_regions_still_opens_with_empty_regions(self):
+        fixture = Path(__file__).resolve().parents[1] / "examples" / "example-campaign.json"
+
+        reopened = load_campaign(fixture)
+
+        self.assertEqual(reopened.seed, "atlasmancer-sample")
+        self.assertEqual(reopened.regions, ())
 
     def test_player_safe_campaign_cannot_be_reopened_as_master(self):
         world = generate_world(seed="player-safe-save", width=36, height=16, landmark_count=3)
@@ -90,7 +97,7 @@ class CampaignLoaderTests(unittest.TestCase):
                 main(["--open", str(path), "--format", "plain"])
 
         self.assertIn("campaign schema '9.9.9'", error.getvalue())
-        self.assertIn("0.2.0, 0.3.0", error.getvalue())
+        self.assertIn("0.2.0, 0.3.0, 0.4.0", error.getvalue())
 
     def test_open_ignores_generation_flags_and_can_use_example_fixture(self):
         fixture = Path(__file__).resolve().parents[1] / "examples" / "example-campaign.json"
@@ -141,6 +148,27 @@ class CampaignLoaderTests(unittest.TestCase):
         self.assertNotIn(first_original.hook, text)
         self.assertIn(first_original.name, text)
         self.assertIn(f"at {first_original.x},{first_original.y}", text)
+
+    def test_reopen_with_different_locale_translates_region_descriptions(self):
+        original = generate_world(seed="region-locale-reopen", width=72, height=28, landmark_count=3, locale="en")
+        expected = localize_world(original, "es")
+
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "english.campaign.json"
+            path.write_text(render_campaign(original), encoding="utf-8")
+            output = StringIO()
+
+            with redirect_stdout(output):
+                main(["--open", str(path), "--locale", "es", "--format", "markdown"])
+
+        first_original = original.regions[0]
+        first_expected = expected.regions[0]
+        text = output.getvalue()
+
+        self.assertIn("## Regiones", text)
+        self.assertIn(first_expected.description, text)
+        self.assertNotIn(first_original.description, text)
+        self.assertIn(first_original.name, text)
 
 
 if __name__ == "__main__":

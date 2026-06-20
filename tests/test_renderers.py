@@ -14,7 +14,9 @@ class RendererTests(unittest.TestCase):
 
         self.assertIn("<!doctype html>", html)
         self.assertIn("Printable GM atlas", html)
+        self.assertIn("Regions", html)
         self.assertIn("Landmarks", html)
+        self.assertIn(world.regions[0].name, html)
         self.assertIn("Secret", html)
 
     def test_html_renderer_uses_spanish_locale(self):

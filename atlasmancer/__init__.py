@@ -4,4 +4,4 @@ from .generator import World, generate_world
 
 __all__ = ["World", "generate_world"]
 
-__version__ = "0.3.0"
+__version__ = "0.4.0"

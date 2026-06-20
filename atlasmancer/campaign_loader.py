@@ -7,10 +7,10 @@ import json
 from pathlib import Path
 from typing import Any
 
-from .generator import Landmark, World
+from .generator import Landmark, Region, World
 from .i18n import DEFAULT_LOCALE, load_locale
 
-SUPPORTED_SCHEMA_VERSIONS = ("0.2.0", "0.3.0")
+SUPPORTED_SCHEMA_VERSIONS = ("0.2.0", "0.3.0", "0.4.0")
 
 _CONTENT_FIELDS = {
     "hook": "hooks",
@@ -45,6 +45,7 @@ def load_campaign(path: str | Path, locale: str = DEFAULT_LOCALE) -> World:
 
     map_data = _mapping(payload["map"])
     landmarks = tuple(_landmark_from_payload(entry, catalog) for entry in payload["landmarks"])
+    regions = tuple(_region_from_payload(entry) for entry in payload.get("regions", []))
 
     return World(
         seed=str(meta["seed"]),
@@ -54,6 +55,7 @@ def load_campaign(path: str | Path, locale: str = DEFAULT_LOCALE) -> World:
         height=int(map_data["height"]),
         tiles=tuple(str(row) for row in map_data["ascii"]),
         landmarks=landmarks,
+        regions=regions,
         locale=str(meta.get("locale", DEFAULT_LOCALE)),
     )
 
@@ -79,7 +81,19 @@ def localize_world(world: World, locale: str) -> World:
         }
         translated_landmarks.append(replace(landmark, **updates))
 
-    return replace(world, locale=locale, landmarks=tuple(translated_landmarks))
+    translated_regions = tuple(
+        replace(
+            region,
+            description=_translate_content(
+                region.description,
+                source_catalog.content("regions"),
+                target_catalog.content("regions"),
+            ),
+        )
+        for region in world.regions
+    )
+
+    return replace(world, locale=locale, landmarks=tuple(translated_landmarks), regions=translated_regions)
 
 
 def _landmark_from_payload(entry: Any, catalog) -> Landmark:
@@ -103,6 +117,18 @@ def _landmark_from_payload(entry: Any, catalog) -> Landmark:
         secret=str(gm["secret"]),
         danger=str(gm["danger"]),
         reward=str(gm["reward"]),
+    )
+
+
+def _region_from_payload(entry: Any) -> Region:
+    data = _mapping(entry)
+    return Region(
+        id=str(data["id"]),
+        name=str(data["name"]),
+        kind=str(data["kind"]),
+        tile_count=int(data["tile_count"]),
+        is_island=bool(data["is_island"]),
+        description=str(data["description"]),
     )
 
 

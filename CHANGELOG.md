@@ -2,6 +2,10 @@
 
 ## 0.4.0 - Unreleased
 
+### Added
+
+- Geography regions are now serialized in `campaign.json`, reopened with `--open`, and shown in Markdown and HTML exports.
+
 ### Changed
 
 - Geography region detection and river continuity fixes may change region or river layouts for existing seeds compared with earlier versions.

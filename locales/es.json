@@ -52,6 +52,7 @@
   "export": {
     "legend_label": "Leyenda",
     "landmarks_label": "Lugares destacados",
+    "regions_label": "Regiones",
     "hook_label": "Gancho",
     "npc_label": "PNJ",
     "rumor_label": "Rumor",

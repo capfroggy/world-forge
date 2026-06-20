@@ -8,11 +8,10 @@ import json
 from atlasmancer import __version__ as GENERATOR_VERSION
 from atlasmancer.generator import LANDMARK_KEYS, TERRAIN_KEYS, World
 
-SCHEMA_VERSION = "0.3.0"
+SCHEMA_VERSION = "0.4.0"
 GENERATOR_NAME = "atlasmancer"
 
 RESERVED_FOR = {
-    "regions": "v0.4 Geography Engine",
     "countries": "v0.5 Civilizations",
     "factions": "v0.6 Playable Content",
     "quests": "v0.6 Playable Content",
@@ -48,6 +47,18 @@ def build_campaign(world: World, audience: str = "gm") -> dict:
             }
         landmarks.append(entry)
 
+    regions = [
+        {
+            "id": region.id,
+            "name": region.name,
+            "kind": region.kind,
+            "tile_count": region.tile_count,
+            "is_island": region.is_island,
+            "description": region.description,
+        }
+        for region in world.regions
+    ]
+
     return {
         "meta": {
             "schema_version": SCHEMA_VERSION,
@@ -72,7 +83,7 @@ def build_campaign(world: World, audience: str = "gm") -> dict:
             "ascii": list(world.tiles),
         },
         "landmarks": landmarks,
-        "regions": [],
+        "regions": regions,
         "countries": [],
         "factions": [],
         "quests": [],

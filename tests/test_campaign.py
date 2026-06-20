@@ -17,13 +17,29 @@ class CampaignExportTests(unittest.TestCase):
         self.assertEqual(payload["meta"]["generator"], "atlasmancer")
         self.assertEqual(payload["meta"]["seed"], "campaign")
 
-    def test_reserved_arrays_are_empty_in_v0_2(self):
+    def test_regions_are_serialized_and_reserved_arrays_remain_empty(self):
         world = generate_world(seed="campaign", width=36, height=16, landmark_count=3)
         payload = build_campaign(world)
 
-        for key in ("regions", "countries", "factions", "quests", "dungeons"):
+        self.assertEqual(
+            payload["regions"],
+            [
+                {
+                    "id": region.id,
+                    "name": region.name,
+                    "kind": region.kind,
+                    "tile_count": region.tile_count,
+                    "is_island": region.is_island,
+                    "description": region.description,
+                }
+                for region in world.regions
+            ],
+        )
+
+        for key in ("countries", "factions", "quests", "dungeons"):
             self.assertEqual(payload[key], [])
         self.assertEqual(payload["reserved_for"], RESERVED_FOR)
+        self.assertNotIn("regions", payload["reserved_for"])
 
     def test_gm_block_present_for_gm_audience(self):
         world = generate_world(seed="campaign", width=36, height=16, landmark_count=3)

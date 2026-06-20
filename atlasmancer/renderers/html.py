@@ -66,6 +66,21 @@ def render_html(world: World, audience: str = "gm") -> str:
         card_lines.append("</article>")
         landmark_cards.append("\n".join(card_lines))
 
+    region_cards = []
+    for region in world.regions:
+        kind = catalog.t(f"terrain.{region.kind}")
+        region_cards.append(
+            "\n".join(
+                [
+                    '<article class="region">',
+                    f"<h3>{escape(region.name)}</h3>",
+                    f"<p><strong>{escape(kind.title())}</strong> | {region.tile_count} tiles</p>",
+                    f"<p>{escape(region.description)}</p>",
+                    "</article>",
+                ]
+            )
+        )
+
     atlas_label = catalog.t("export.printable_player_atlas") if audience == "player" else catalog.t("export.printable_gm_atlas")
     header_lines = [
         f"<h1>{escape(world.title)}</h1>",
@@ -102,6 +117,8 @@ def render_html(world: World, audience: str = "gm") -> str:
             "</div>",
             "</section>",
             '<aside class="notes">',
+            f"<h2>{escape(catalog.t('export.regions_label'))}</h2>",
+            "".join(region_cards),
             f"<h2>{escape(catalog.t('export.landmarks_label'))}</h2>",
             "".join(landmark_cards),
             "</aside>",
@@ -217,17 +234,20 @@ header p {{
   margin: 0 0 4px;
   font-size: 24px;
 }}
-.landmark {{
+.landmark,
+.region {{
   break-inside: avoid;
   border: 1px solid #a78350;
   background: rgba(255, 248, 225, 0.72);
   padding: 10px 12px;
 }}
-.landmark h3 {{
+.landmark h3,
+.region h3 {{
   margin: 0 0 5px;
   font-size: 17px;
 }}
-.landmark p {{
+.landmark p,
+.region p {{
   margin: 4px 0;
   font-size: 13px;
   line-height: 1.32;

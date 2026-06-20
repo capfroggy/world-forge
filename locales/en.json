@@ -52,6 +52,7 @@
   "export": {
     "legend_label": "Legend",
     "landmarks_label": "Landmarks",
+    "regions_label": "Regions",
     "hook_label": "Hook",
     "npc_label": "NPC",
     "rumor_label": "Rumor",

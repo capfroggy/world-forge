@@ -275,6 +275,13 @@ class World:
         if not landmark_lines:
             landmark_lines = "- No landmarks survived the cartographer."
 
+        region_lines = "\n".join(
+            f"- **{region.name}** ({catalog.t(f'terrain.{region.kind}')}, {region.tile_count} tiles): {region.description}"
+            for region in self.regions
+        )
+        if not region_lines:
+            region_lines = "- No regions detected."
+
         return "\n".join(
             [
                 f"# {self.title}",
@@ -286,6 +293,10 @@ class World:
                 "```",
                 "",
                 legend_text(catalog),
+                "",
+                f"## {catalog.t('export.regions_label')}",
+                "",
+                region_lines,
                 "",
                 f"## {catalog.t('export.landmarks_label')}",
                 "",
