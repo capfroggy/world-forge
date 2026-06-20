@@ -103,6 +103,16 @@ Locale catalogs live in [`locales/en.json`](locales/en.json) and [`locales/es.js
 
 `--format campaign` produces a versioned `campaign.json` meant to outlive engine changes — see [`docs/ATLASMANCER_V0.2_SPEC.md`](docs/ATLASMANCER_V0.2_SPEC.md) section 5 for the full schema. It carries `meta` (seed, locale, audience, schema/generator versions), the map, and per-landmark `public`/`gm` blocks, plus empty `regions`/`countries`/`factions`/`quests`/`dungeons` arrays reserved for later phases of the roadmap.
 
+## Examples
+
+Sample exports live in [`examples/`](examples/) and are generated from the fixed seed `atlasmancer-sample` in English, Spanish, GM, player, and campaign JSON variants.
+
+Regenerate every example with:
+
+```bash
+python scripts/build_examples.py
+```
+
 ## Why this exists
 
 Because sometimes a small, strange command-line toy is exactly enough momentum

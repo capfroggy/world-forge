@@ -1,0 +1,244 @@
+{
+  "meta": {
+    "schema_version": "0.2.0",
+    "generator": "atlasmancer",
+    "generator_version": "0.2.0",
+    "world_id": "f759f73c",
+    "seed": "atlasmancer-sample",
+    "locale": "en",
+    "audience": "gm",
+    "created_at": "2026-06-20T02:43:07.755908+00:00",
+    "params": {
+      "width": 72,
+      "height": 28,
+      "landmark_count": 9
+    }
+  },
+  "title": "The Thorn Wilds of Eld",
+  "map": {
+    "width": 72,
+    "height": 28,
+    "legend": {
+      "~": "terrain.deep_water",
+      ",": "terrain.shoals",
+      ".": "terrain.coast",
+      ";": "terrain.grassland",
+      ":": "terrain.drylands",
+      "^": "terrain.forest",
+      "A": "terrain.mountains",
+      "*": "terrain.snow",
+      "|": "terrain.river",
+      "C": "landmark.capital",
+      "v": "landmark.village",
+      "X": "landmark.ruin",
+      "T": "landmark.tower",
+      "?": "landmark.oddity"
+    },
+    "ascii": [
+      "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
+      "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
+      "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
+      "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
+      "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
+      "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
+      "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
+      "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
+      "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
+      "~~~~~~~~~~~~~~~~~~~~~~~~~~,~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
+      "~~~~~~~~~~~~~~~~~~~~~~~,,,,.,,,,,,~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
+      "~~~~~~~~~~~~~~~~~~~~,,,,....v.....,,,,~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
+      "~~~~~~~~~~~~~~~~~~,,,,....;;;;;;;..T,,,,,~~,,,,,,,,,,~~~~~~~~~~~~~~~~~~~",
+      "~~~~~~~~~~~~~~~~~~,,v....|;;;;;;;;....,,,,,,,,....,,,,,~~~~~~~~~~~~~~~~~",
+      "~~~~~~~~~~~~~~~~~~,,,.v..|;;;;;;;;....,,,,,,........,,,~~~~~~~~~~~~~~~~~",
+      "~~~~~~~~~~~~~~~~~~~,,,,..C.?;..?.....,,,,,,,.||||;..,,,~~~~~~~~~~~~~~~~~",
+      "~~~~~~~~~~~~~~~~~~~~~~,,,,,,,,,,,,,,,,,,~~~,,..;;;..,,~~~~~~~~~~~~~~~~~~",
+      "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~,,?.;..X,~~~~~~~~~~~~~~~~~~~",
+      "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~,,...,,~~~~~~~~~~~~~~~~~~~~",
+      "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~,,,~~~~~~~~~~~~~~~~~~~~~~",
+      "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
+      "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
+      "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
+      "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
+      "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
+      "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
+      "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
+      "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+    ]
+  },
+  "landmarks": [
+    {
+      "id": "lm-01",
+      "symbol": "C",
+      "kind": "capital",
+      "name": "Ael Hollow",
+      "x": 25,
+      "y": 15,
+      "public": {
+        "hook": "A local leader needs neutral outsiders before a feud turns violent.",
+        "rumor": "Every seventh bridge is older than the river.",
+        "npc": "a scarred hunter who knows the old paths"
+      },
+      "gm": {
+        "secret": "The ruler here is protecting an enemy spy.",
+        "danger": "restless dead that follow spoken names",
+        "reward": "maps to another forgotten site"
+      }
+    },
+    {
+      "id": "lm-02",
+      "symbol": "?",
+      "kind": "oddity",
+      "name": "Dun Cross",
+      "x": 31,
+      "y": 15,
+      "public": {
+        "hook": "A patron offers coin for proof that the old stories are true.",
+        "rumor": "The well water tastes like rain that hasn't fallen yet.",
+        "npc": "a quiet scribe carrying a sealed royal order"
+      },
+      "gm": {
+        "secret": "The landmark is built on older stone from a lost empire.",
+        "danger": "restless dead that follow spoken names",
+        "reward": "a chest of old coins and newer blackmail"
+      }
+    },
+    {
+      "id": "lm-03",
+      "symbol": "?",
+      "kind": "oddity",
+      "name": "BelBrook",
+      "x": 46,
+      "y": 17,
+      "public": {
+        "hook": "A local leader needs neutral outsiders before a feud turns violent.",
+        "rumor": "Cartographers keep losing the same peninsula.",
+        "npc": "a cartographer who refuses to finish one particular map"
+      },
+      "gm": {
+        "secret": "The local legend is false, but the cover-up is worse.",
+        "danger": "poisonous fog rolling in from low ground",
+        "reward": "the true name of a dangerous spirit"
+      }
+    },
+    {
+      "id": "lm-04",
+      "symbol": "T",
+      "kind": "tower",
+      "name": "Eld Ridge",
+      "x": 35,
+      "y": 12,
+      "public": {
+        "hook": "Travelers vanished after following lights beyond the road.",
+        "rumor": "Every seventh bridge is older than the river.",
+        "npc": "a tired caravan master with a perfect memory for roads"
+      },
+      "gm": {
+        "secret": "A nearby spring is slowly changing anyone who drinks from it.",
+        "danger": "bandits with military discipline",
+        "reward": "maps to another forgotten site"
+      }
+    },
+    {
+      "id": "lm-05",
+      "symbol": "v",
+      "kind": "village",
+      "name": "Bel Hollow",
+      "x": 28,
+      "y": 11,
+      "public": {
+        "hook": "A sealed door has opened for the first time in a century.",
+        "rumor": "Nobody agrees where the oldest road begins.",
+        "npc": "a merchant who pays too well for very specific rocks"
+      },
+      "gm": {
+        "secret": "The treasure everyone seeks is actually a prison key.",
+        "danger": "restless dead that follow spoken names",
+        "reward": "a loyal guide who knows the wilderness"
+      }
+    },
+    {
+      "id": "lm-06",
+      "symbol": "v",
+      "kind": "village",
+      "name": "Bel Gate",
+      "x": 20,
+      "y": 13,
+      "public": {
+        "hook": "Someone is buying maps of this place and burning every copy.",
+        "rumor": "Dogs refuse to cross the old bridge after dark.",
+        "npc": "a river priest who collects forbidden maps"
+      },
+      "gm": {
+        "secret": "The treasure everyone seeks is actually a prison key.",
+        "danger": "restless dead that follow spoken names",
+        "reward": "a chest of old coins and newer blackmail"
+      }
+    },
+    {
+      "id": "lm-07",
+      "symbol": "X",
+      "kind": "ruin",
+      "name": "Sol Wick",
+      "x": 51,
+      "y": 17,
+      "public": {
+        "hook": "Someone is buying maps of this place and burning every copy.",
+        "rumor": "Nobody in town will say the previous mayor's name out loud.",
+        "npc": "a young astronomer tracking an impossible star"
+      },
+      "gm": {
+        "secret": "The oldest family in town serves something under the hills.",
+        "danger": "restless dead that follow spoken names",
+        "reward": "a minor magic item with a useful flaw"
+      }
+    },
+    {
+      "id": "lm-08",
+      "symbol": "v",
+      "kind": "village",
+      "name": "Tor Ridge",
+      "x": 22,
+      "y": 14,
+      "public": {
+        "hook": "A patron offers coin for proof that the old stories are true.",
+        "rumor": "Every seventh bridge is older than the river.",
+        "npc": "a scarred hunter who knows the old paths"
+      },
+      "gm": {
+        "secret": "One landmark on the map does not exist unless it is being watched.",
+        "danger": "raiders using old border tunnels",
+        "reward": "a minor magic item with a useful flaw"
+      }
+    },
+    {
+      "id": "lm-09",
+      "symbol": "?",
+      "kind": "oddity",
+      "name": "Cor Reach",
+      "x": 27,
+      "y": 15,
+      "public": {
+        "hook": "A caravan arrived with no drivers and cargo from a ruined age.",
+        "rumor": "Nobody agrees where the oldest road begins.",
+        "npc": "a masked captain looking for a missing heir"
+      },
+      "gm": {
+        "secret": "The local legend is false, but the cover-up is worse.",
+        "danger": "bandits with military discipline",
+        "reward": "a safe route through hostile terrain"
+      }
+    }
+  ],
+  "regions": [],
+  "countries": [],
+  "factions": [],
+  "quests": [],
+  "dungeons": [],
+  "reserved_for": {
+    "regions": "v0.4 Geography Engine",
+    "countries": "v0.5 Civilizations",
+    "factions": "v0.6 Playable Content",
+    "quests": "v0.6 Playable Content",
+    "dungeons": "v0.8 Dungeons & Tactical Maps"
+  }
+}
