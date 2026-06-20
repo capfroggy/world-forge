@@ -7,7 +7,7 @@ import hashlib
 import json
 import math
 import random
-from typing import Iterable
+from typing import Iterable, Sequence
 
 from .i18n import DEFAULT_LOCALE, LocaleCatalog, load_locale
 
@@ -21,6 +21,27 @@ TERRAIN_KEYS = {
     "A": "terrain.mountains",
     "*": "terrain.snow",
     "|": "terrain.river",
+}
+
+LAND_REGION_KINDS = {
+    ";": "grassland",
+    ":": "drylands",
+    "^": "forest",
+    "A": "mountains",
+    "*": "snow",
+}
+COAST_TILE = "."
+LAND_REGION_TILES = set(LAND_REGION_KINDS) | {COAST_TILE}
+WATER_TILES = {"~", ","}
+MIN_REGION_SIZE = 6
+OCEAN_SIZE_THRESHOLD = 80
+REGION_KIND_ORDER = ("grassland", "drylands", "forest", "mountains", "snow")
+REGION_DESCRIPTION_INDEX = {
+    "forest": 0,
+    "drylands": 1,
+    "grassland": 2,
+    "mountains": 3,
+    "snow": 4,
 }
 
 LANDMARK_KEYS = {
@@ -124,6 +145,41 @@ AUDIENCES = ("gm", "player")
 
 
 @dataclass(frozen=True)
+class Region:
+    """A named natural region detected from contiguous terrain."""
+
+    id: str
+    name: str
+    kind: str
+    tile_count: int
+    is_island: bool
+    description: str
+
+
+@dataclass
+class _LandComponent:
+    kind: str
+    tiles: set[tuple[int, int]]
+    min_coord: tuple[int, int]
+
+
+@dataclass
+class _RegionDraft:
+    tiles: set[tuple[int, int]]
+    kind_counts: dict[str, int]
+    min_coord: tuple[int, int]
+    land_mass_id: int
+
+
+@dataclass(frozen=True)
+class _WaterBody:
+    kind: str
+    tiles: frozenset[tuple[int, int]]
+    tile_count: int
+    touches_edge: bool
+
+
+@dataclass(frozen=True)
 class Landmark:
     """A named point of interest placed on the map."""
 
@@ -152,6 +208,7 @@ class World:
     height: int
     tiles: tuple[str, ...]
     landmarks: tuple[Landmark, ...]
+    regions: tuple[Region, ...] = ()
     locale: str = DEFAULT_LOCALE
 
     def render_plain(self, audience: str = DEFAULT_AUDIENCE) -> str:
@@ -240,6 +297,7 @@ class World:
     def to_json(self) -> str:
         data = asdict(self)
         data["landmarks"] = [asdict(landmark) for landmark in self.landmarks]
+        data["regions"] = [asdict(region) for region in self.regions]
         return json.dumps(data, indent=2, sort_keys=True)
 
 
@@ -262,6 +320,7 @@ def generate_world(
     elevation = _field(seed, width, height, "elevation")
     moisture = _field(seed, width, height, "moisture")
     tiles = _terrain(seed, width, height, elevation, moisture)
+    regions = _detect_regions(seed, tiles, catalog)
     river_points = _river_points(seed, width, height, elevation, tiles)
     tiles = _overlay(tiles, river_points, "|")
     landmarks = _landmarks(seed, rng, width, height, tiles, landmark_count, catalog)
@@ -276,6 +335,7 @@ def generate_world(
         height=height,
         tiles=tuple("".join(row) for row in tiles),
         landmarks=tuple(landmarks),
+        regions=regions,
         locale=locale,
     )
 
@@ -366,6 +426,304 @@ def _field(seed: str, width: int, height: int, salt: str) -> list[list[float]]:
     return rows
 
 
+def _detect_regions(seed: str, tiles: Sequence[Sequence[str]], catalog: LocaleCatalog) -> tuple[Region, ...]:
+    components, component_by_tile = _land_components(tiles)
+    if not components:
+        return ()
+
+    mass_by_tile, main_mass_id = _land_mass_ids(tiles)
+    drafts: list[_RegionDraft] = []
+    component_to_region: dict[int, int] = {}
+
+    for index, component in enumerate(components):
+        if len(component.tiles) < MIN_REGION_SIZE:
+            continue
+        tile = next(iter(component.tiles))
+        component_to_region[index] = len(drafts)
+        drafts.append(
+            _RegionDraft(
+                tiles=set(component.tiles),
+                kind_counts={component.kind: len(component.tiles)},
+                min_coord=component.min_coord,
+                land_mass_id=mass_by_tile.get(tile, -1),
+            )
+        )
+
+    pending = [index for index, component in enumerate(components) if len(component.tiles) < MIN_REGION_SIZE]
+    while pending:
+        merged = False
+        for index in pending[:]:
+            candidates = _neighbor_region_indices(components[index].tiles, component_by_tile, component_to_region, tiles)
+            if not candidates:
+                continue
+            region_index = _largest_region(candidates, drafts)
+            _merge_component(drafts[region_index], components[index])
+            component_to_region[index] = region_index
+            pending.remove(index)
+            merged = True
+        if not merged:
+            index = min(pending, key=lambda item: (-len(components[item].tiles), components[item].min_coord))
+            component = components[index]
+            if drafts:
+                region_index = _nearest_region_to_component(component, drafts)
+                _merge_component(drafts[region_index], component)
+                component_to_region[index] = region_index
+            else:
+                tile = next(iter(component.tiles))
+                component_to_region[index] = len(drafts)
+                drafts.append(
+                    _RegionDraft(
+                        tiles=set(component.tiles),
+                        kind_counts={component.kind: len(component.tiles)},
+                        min_coord=component.min_coord,
+                        land_mass_id=mass_by_tile.get(tile, -1),
+                    )
+                )
+            pending.remove(index)
+
+    _assign_coasts(drafts, tiles)
+
+    regions: list[Region] = []
+    used_names: set[str] = set()
+    for index, draft in enumerate(sorted(drafts, key=lambda item: item.min_coord), start=1):
+        kind = _dominant_region_kind(draft.kind_counts)
+        regions.append(
+            Region(
+                id=f"rg-{index:02d}",
+                name=_region_name(seed, index, used_names),
+                kind=kind,
+                tile_count=len(draft.tiles),
+                is_island=draft.land_mass_id != main_mass_id,
+                description=catalog.content("regions")[REGION_DESCRIPTION_INDEX[kind]],
+            )
+        )
+    return tuple(regions)
+
+
+def _land_components(tiles: Sequence[Sequence[str]]) -> tuple[list[_LandComponent], dict[tuple[int, int], int]]:
+    height = len(tiles)
+    width = len(tiles[0]) if height else 0
+    visited: set[tuple[int, int]] = set()
+    components: list[_LandComponent] = []
+    component_by_tile: dict[tuple[int, int], int] = {}
+
+    for y in range(height):
+        for x in range(width):
+            if (x, y) in visited or tiles[y][x] not in LAND_REGION_KINDS:
+                continue
+            symbol = tiles[y][x]
+            kind = LAND_REGION_KINDS[symbol]
+            stack = [(x, y)]
+            visited.add((x, y))
+            component_tiles: set[tuple[int, int]] = set()
+
+            while stack:
+                cx, cy = stack.pop()
+                component_tiles.add((cx, cy))
+                for nx, ny in _neighbors(cx, cy, width, height):
+                    if (nx, ny) in visited or tiles[ny][nx] != symbol:
+                        continue
+                    visited.add((nx, ny))
+                    stack.append((nx, ny))
+
+            component_index = len(components)
+            for tile in component_tiles:
+                component_by_tile[tile] = component_index
+            components.append(
+                _LandComponent(
+                    kind=kind,
+                    tiles=component_tiles,
+                    min_coord=_min_coord(component_tiles),
+                )
+            )
+
+    return components, component_by_tile
+
+
+def _land_mass_ids(tiles: Sequence[Sequence[str]]) -> tuple[dict[tuple[int, int], int], int]:
+    height = len(tiles)
+    width = len(tiles[0]) if height else 0
+    visited: set[tuple[int, int]] = set()
+    mass_by_tile: dict[tuple[int, int], int] = {}
+    mass_sizes: list[int] = []
+
+    for y in range(height):
+        for x in range(width):
+            if (x, y) in visited or tiles[y][x] not in LAND_REGION_TILES:
+                continue
+            mass_id = len(mass_sizes)
+            stack = [(x, y)]
+            visited.add((x, y))
+            count = 0
+            while stack:
+                cx, cy = stack.pop()
+                mass_by_tile[(cx, cy)] = mass_id
+                count += 1
+                for nx, ny in _neighbors(cx, cy, width, height):
+                    if (nx, ny) in visited or tiles[ny][nx] not in LAND_REGION_TILES:
+                        continue
+                    visited.add((nx, ny))
+                    stack.append((nx, ny))
+            mass_sizes.append(count)
+
+    if not mass_sizes:
+        return mass_by_tile, -1
+    main_mass_id = max(range(len(mass_sizes)), key=lambda index: (mass_sizes[index], -index))
+    return mass_by_tile, main_mass_id
+
+
+def _classify_water_bodies(tiles: Sequence[Sequence[str]]) -> tuple[_WaterBody, ...]:
+    height = len(tiles)
+    width = len(tiles[0]) if height else 0
+    visited: set[tuple[int, int]] = set()
+    bodies: list[_WaterBody] = []
+
+    for y in range(height):
+        for x in range(width):
+            if (x, y) in visited or tiles[y][x] not in WATER_TILES:
+                continue
+            stack = [(x, y)]
+            visited.add((x, y))
+            body_tiles: set[tuple[int, int]] = set()
+            touches_edge = False
+
+            while stack:
+                cx, cy = stack.pop()
+                body_tiles.add((cx, cy))
+                touches_edge = touches_edge or _is_edge(cx, cy, width, height)
+                for nx, ny in _neighbors(cx, cy, width, height):
+                    if (nx, ny) in visited or tiles[ny][nx] not in WATER_TILES:
+                        continue
+                    visited.add((nx, ny))
+                    stack.append((nx, ny))
+
+            kind = "ocean" if touches_edge or len(body_tiles) >= OCEAN_SIZE_THRESHOLD else "lake"
+            bodies.append(
+                _WaterBody(
+                    kind=kind,
+                    tiles=frozenset(body_tiles),
+                    tile_count=len(body_tiles),
+                    touches_edge=touches_edge,
+                )
+            )
+
+    return tuple(sorted(bodies, key=lambda body: _min_coord(body.tiles)))
+
+
+def _neighbor_region_indices(
+    tiles_to_check: set[tuple[int, int]],
+    component_by_tile: dict[tuple[int, int], int],
+    component_to_region: dict[int, int],
+    tiles: Sequence[Sequence[str]],
+) -> set[int]:
+    height = len(tiles)
+    width = len(tiles[0]) if height else 0
+    candidates: set[int] = set()
+    for x, y in tiles_to_check:
+        for neighbor in _neighbors(x, y, width, height):
+            component_index = component_by_tile.get(neighbor)
+            if component_index is not None and component_index in component_to_region:
+                candidates.add(component_to_region[component_index])
+    return candidates
+
+
+def _largest_region(candidates: set[int], drafts: list[_RegionDraft]) -> int:
+    return min(candidates, key=lambda index: (-len(drafts[index].tiles), drafts[index].min_coord))
+
+
+def _merge_component(draft: _RegionDraft, component: _LandComponent) -> None:
+    draft.tiles.update(component.tiles)
+    draft.kind_counts[component.kind] = draft.kind_counts.get(component.kind, 0) + len(component.tiles)
+    draft.min_coord = min(draft.min_coord, component.min_coord)
+
+
+def _assign_coasts(drafts: list[_RegionDraft], tiles: Sequence[Sequence[str]]) -> None:
+    if not drafts:
+        return
+
+    height = len(tiles)
+    width = len(tiles[0]) if height else 0
+    region_by_tile = {tile: index for index, draft in enumerate(drafts) for tile in draft.tiles}
+    pending = [(x, y) for y in range(height) for x in range(width) if tiles[y][x] == COAST_TILE]
+
+    while pending:
+        assigned_this_pass = False
+        for tile in pending[:]:
+            candidates = {
+                region_by_tile[neighbor]
+                for neighbor in _neighbors(tile[0], tile[1], width, height)
+                if neighbor in region_by_tile
+            }
+            if not candidates:
+                continue
+            region_index = _largest_region(candidates, drafts)
+            _add_coast_tile(drafts[region_index], tile)
+            region_by_tile[tile] = region_index
+            pending.remove(tile)
+            assigned_this_pass = True
+        if not assigned_this_pass:
+            for tile in pending:
+                region_index = _nearest_region(tile, drafts)
+                _add_coast_tile(drafts[region_index], tile)
+                region_by_tile[tile] = region_index
+            pending.clear()
+
+
+def _add_coast_tile(draft: _RegionDraft, tile: tuple[int, int]) -> None:
+    draft.tiles.add(tile)
+    draft.min_coord = min(draft.min_coord, (tile[1], tile[0]))
+
+
+def _nearest_region(tile: tuple[int, int], drafts: list[_RegionDraft]) -> int:
+    x, y = tile
+    return min(
+        range(len(drafts)),
+        key=lambda index: (
+            min(abs(x - rx) + abs(y - ry) for rx, ry in drafts[index].tiles),
+            drafts[index].min_coord,
+        ),
+    )
+
+
+def _nearest_region_to_component(component: _LandComponent, drafts: list[_RegionDraft]) -> int:
+    return min(
+        range(len(drafts)),
+        key=lambda index: (
+            min(
+                abs(cx - rx) + abs(cy - ry)
+                for cx, cy in component.tiles
+                for rx, ry in drafts[index].tiles
+            ),
+            -len(drafts[index].tiles),
+            drafts[index].min_coord,
+        ),
+    )
+
+
+def _dominant_region_kind(kind_counts: dict[str, int]) -> str:
+    return min(
+        kind_counts,
+        key=lambda kind: (-kind_counts[kind], REGION_KIND_ORDER.index(kind)),
+    )
+
+
+def _region_name(seed: str, index: int, used_names: set[str]) -> str:
+    rng = random.Random(_seed_int(seed, f"region-name-{index}"))
+    for _ in range(len(TITLE_ADJECTIVES) * len(TITLE_NOUNS)):
+        name = f"The {rng.choice(TITLE_ADJECTIVES)} {rng.choice(TITLE_NOUNS)}"
+        if name not in used_names:
+            used_names.add(name)
+            return name
+
+    name = f"The {rng.choice(TITLE_ADJECTIVES)} {rng.choice(TITLE_NOUNS)} {index}"
+    used_names.add(name)
+    return name
+
+
+def _min_coord(points: Iterable[tuple[int, int]]) -> tuple[int, int]:
+    return min((y, x) for x, y in points)
+
+
 def _river_points(
     seed: str,
     width: int,
@@ -373,6 +731,7 @@ def _river_points(
     elevation: list[list[float]],
     tiles: list[list[str]],
 ) -> set[tuple[int, int]]:
+    water_tiles = {tile for body in _classify_water_bodies(tiles) for tile in body.tiles}
     candidates = [
         (elevation[y][x], x, y)
         for y in range(2, height - 2)
@@ -389,31 +748,102 @@ def _river_points(
     rivers: set[tuple[int, int]] = set()
 
     for source in selected:
-        x, y = source
-        seen: set[tuple[int, int]] = set()
-        for _ in range(width + height):
-            if not (0 <= x < width and 0 <= y < height) or (x, y) in seen:
-                break
-            seen.add((x, y))
-            if tiles[y][x] in {"~", ","}:
-                break
-            if tiles[y][x] not in {"A", "*"}:
-                rivers.add((x, y))
-
-            neighbors = _neighbors(x, y, width, height)
-            water = [(nx, ny) for nx, ny in neighbors if tiles[ny][nx] in {"~", ","}]
-            if water:
-                x, y = rng.choice(water)
-                continue
-
-            x, y = min(
-                neighbors,
-                key=lambda point: elevation[point[1]][point[0]]
-                + rng.random() * 0.06
-                + (0.03 if point in seen else 0),
-            )
+        rivers.update(_river_path(source, width, height, elevation, tiles, water_tiles, rng))
 
     return rivers
+
+
+def _river_path(
+    source: tuple[int, int],
+    width: int,
+    height: int,
+    elevation: list[list[float]],
+    tiles: Sequence[Sequence[str]],
+    water_tiles: set[tuple[int, int]],
+    rng: random.Random,
+) -> set[tuple[int, int]]:
+    x, y = source
+    seen: set[tuple[int, int]] = set()
+    path: list[tuple[int, int]] = []
+
+    for _ in range(width + height):
+        if (x, y) in water_tiles:
+            return set(path)
+        if _is_edge(x, y, width, height):
+            return set(_append_river_point(path, (x, y), tiles))
+        if (x, y) in seen:
+            return set(_finish_river_path(path, (x, y), width, height, tiles, water_tiles))
+
+        seen.add((x, y))
+        _append_river_point(path, (x, y), tiles)
+
+        neighbors = _neighbors(x, y, width, height)
+        if any(neighbor in water_tiles for neighbor in neighbors):
+            return set(path)
+
+        unvisited = [point for point in neighbors if point not in seen and point not in water_tiles]
+        if not unvisited:
+            return set(_finish_river_path(path, (x, y), width, height, tiles, water_tiles))
+
+        x, y = min(
+            unvisited,
+            key=lambda point: elevation[point[1]][point[0]] + rng.random() * 0.06,
+        )
+
+    return set(_finish_river_path(path, (x, y), width, height, tiles, water_tiles))
+
+
+def _append_river_point(
+    path: list[tuple[int, int]],
+    point: tuple[int, int],
+    tiles: Sequence[Sequence[str]],
+) -> list[tuple[int, int]]:
+    x, y = point
+    if tiles[y][x] not in WATER_TILES and (not path or path[-1] != point):
+        path.append(point)
+    return path
+
+
+def _finish_river_path(
+    path: list[tuple[int, int]],
+    start: tuple[int, int],
+    width: int,
+    height: int,
+    tiles: Sequence[Sequence[str]],
+    water_tiles: set[tuple[int, int]],
+) -> list[tuple[int, int]]:
+    for point in _route_to_water_or_edge(start, width, height, tiles, water_tiles):
+        _append_river_point(path, point, tiles)
+    return path
+
+
+def _route_to_water_or_edge(
+    start: tuple[int, int],
+    width: int,
+    height: int,
+    tiles: Sequence[Sequence[str]],
+    water_tiles: set[tuple[int, int]],
+) -> list[tuple[int, int]]:
+    queue = [start]
+    parents: dict[tuple[int, int], tuple[int, int] | None] = {start: None}
+
+    for point in queue:
+        x, y = point
+        if _is_edge(x, y, width, height) or any(neighbor in water_tiles for neighbor in _neighbors(x, y, width, height)):
+            route: list[tuple[int, int]] = []
+            current: tuple[int, int] | None = point
+            while current is not None:
+                route.append(current)
+                current = parents[current]
+            return list(reversed(route))
+
+        for neighbor in _neighbors(x, y, width, height):
+            if neighbor in parents or neighbor in water_tiles:
+                continue
+            parents[neighbor] = point
+            queue.append(neighbor)
+
+    return [start]
 
 
 def _landmarks(
@@ -501,7 +931,7 @@ def _place_landmarks(tiles: list[list[str]], landmarks: Iterable[Landmark]) -> l
 def _overlay(tiles: list[list[str]], points: set[tuple[int, int]], symbol: str) -> list[list[str]]:
     copied = [row[:] for row in tiles]
     for x, y in points:
-        if copied[y][x] not in {"~", ",", "A", "*"}:
+        if copied[y][x] not in WATER_TILES:
             copied[y][x] = symbol
     return copied
 
@@ -512,10 +942,16 @@ def _neighbors(x: int, y: int, width: int, height: int) -> list[tuple[int, int]]
         (x + 1, y),
         (x, y - 1),
         (x, y + 1),
+        (x - 1, y - 1),
+        (x + 1, y - 1),
         (x - 1, y + 1),
         (x + 1, y + 1),
     ]
     return [(nx, ny) for nx, ny in options if 0 <= nx < width and 0 <= ny < height]
+
+
+def _is_edge(x: int, y: int, width: int, height: int) -> bool:
+    return x == 0 or y == 0 or x == width - 1 or y == height - 1
 
 
 def _value_noise(seed: str, x: int, y: int, scale: float, salt: str) -> float:

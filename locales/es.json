@@ -141,6 +141,15 @@
       "mapas hacia otro sitio olvidado",
       "una guía leal que conoce las tierras salvajes",
       "un reclamo legal sobre tierras que nadie quiere todavía"
+    ],
+    "regions": [
+      "Una copa tan espesa que pierde el cielo durante días enteros.",
+      "Un calor que dobla el horizonte hasta volverlo poco confiable.",
+      "Un pastizal alto como para esconder una caravana, o una guerra.",
+      "Picos lo bastante viejos como para haber sobrevivido a sus propios nombres.",
+      "Picos tan altos que el verano nunca termina de llegar.",
+      "Un agua tan ancha que vuelve cada mapa una suposición.",
+      "Un agua que no responde a ninguna marea, ni a nadie."
     ]
   }
 }

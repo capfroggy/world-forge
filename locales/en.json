@@ -141,6 +141,15 @@
       "maps to another forgotten site",
       "a loyal guide who knows the wilderness",
       "a legal claim to land nobody wants yet"
+    ],
+    "regions": [
+      "A canopy thick enough to lose the sky for days at a time.",
+      "Heat that bends the horizon into something unreliable.",
+      "Grass tall enough to hide a caravan, or a war.",
+      "Peaks old enough to have outlived their own names.",
+      "Peaks high enough that summer never quite arrives.",
+      "Water wide enough to make every map a guess.",
+      "Water that answers to no tide and no one."
     ]
   }
 }

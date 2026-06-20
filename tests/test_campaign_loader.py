@@ -2,6 +2,7 @@ import json
 import tempfile
 import unittest
 from contextlib import redirect_stderr, redirect_stdout
+from dataclasses import replace
 from io import StringIO
 from pathlib import Path
 
@@ -21,7 +22,7 @@ class CampaignLoaderTests(unittest.TestCase):
 
             reopened = load_campaign(path)
 
-        self.assertEqual(reopened, original)
+        self.assertEqual(reopened, replace(original, regions=()))
 
     def test_v0_2_schema_is_still_supported(self):
         original = generate_world(seed="v0-2-save", width=40, height=18, landmark_count=5, locale="en")
@@ -34,7 +35,7 @@ class CampaignLoaderTests(unittest.TestCase):
 
             reopened = load_campaign(path)
 
-        self.assertEqual(reopened, original)
+        self.assertEqual(reopened, replace(original, regions=()))
 
     def test_player_safe_campaign_cannot_be_reopened_as_master(self):
         world = generate_world(seed="player-safe-save", width=36, height=16, landmark_count=3)

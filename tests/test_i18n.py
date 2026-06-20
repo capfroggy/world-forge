@@ -11,7 +11,7 @@ class I18nTests(unittest.TestCase):
         en = load_locale("en")
         es = load_locale("es")
 
-        for key in ("npcs", "hooks", "rumors", "secrets", "dangers", "rewards"):
+        for key in ("npcs", "hooks", "rumors", "secrets", "dangers", "rewards", "regions"):
             self.assertEqual(len(en.content(key)), len(es.content(key)), key)
 
     def test_missing_locale_key_falls_back_to_english(self):
