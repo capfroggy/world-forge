@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.5.0 - Unreleased
+
+### Added
+
+- Civilized land masses now generate countries with governments, resources, crises, and one capital each.
+
+### Changed
+
+- Capital landmarks are generated per qualified land mass and no longer consume the `--landmarks` budget; existing seeds may have a different number or placement of capitals.
+
 ## 0.4.0 - Unreleased
 
 ### Added

@@ -43,6 +43,14 @@ REGION_DESCRIPTION_INDEX = {
     "mountains": 3,
     "snow": 4,
 }
+MIN_COUNTRY_LAND_TILES = 20
+COUNTRY_RESOURCE_INDEX = {
+    "forest": 0,
+    "drylands": 1,
+    "grassland": 2,
+    "mountains": 3,
+    "snow": 4,
+}
 
 LANDMARK_KEYS = {
     "C": "landmark.capital",
@@ -145,6 +153,19 @@ AUDIENCES = ("gm", "player")
 
 
 @dataclass(frozen=True)
+class Country:
+    """A civilization occupying one qualified land mass."""
+
+    id: str
+    name: str
+    government: str
+    resource: str
+    current_crisis: str
+    capital_landmark_id: str
+    region_ids: tuple[str, ...]
+
+
+@dataclass(frozen=True)
 class Region:
     """A named natural region detected from contiguous terrain."""
 
@@ -154,6 +175,7 @@ class Region:
     tile_count: int
     is_island: bool
     description: str
+    country_id: str | None = None
 
 
 @dataclass
@@ -180,6 +202,13 @@ class _WaterBody:
 
 
 @dataclass(frozen=True)
+class _RegionData:
+    regions: tuple[Region, ...]
+    region_by_tile: dict[tuple[int, int], str]
+    region_kind_counts: dict[str, dict[str, int]]
+
+
+@dataclass(frozen=True)
 class Landmark:
     """A named point of interest placed on the map."""
 
@@ -195,6 +224,7 @@ class Landmark:
     secret: str
     danger: str
     reward: str
+    country_id: str | None = None
 
 
 @dataclass(frozen=True)
@@ -209,6 +239,7 @@ class World:
     tiles: tuple[str, ...]
     landmarks: tuple[Landmark, ...]
     regions: tuple[Region, ...] = ()
+    countries: tuple[Country, ...] = ()
     locale: str = DEFAULT_LOCALE
 
     def render_plain(self, audience: str = DEFAULT_AUDIENCE) -> str:
@@ -309,6 +340,7 @@ class World:
         data = asdict(self)
         data["landmarks"] = [asdict(landmark) for landmark in self.landmarks]
         data["regions"] = [asdict(region) for region in self.regions]
+        data["countries"] = [asdict(country) for country in self.countries]
         return json.dumps(data, indent=2, sort_keys=True)
 
 
@@ -331,10 +363,43 @@ def generate_world(
     elevation = _field(seed, width, height, "elevation")
     moisture = _field(seed, width, height, "moisture")
     tiles = _terrain(seed, width, height, elevation, moisture)
-    regions = _detect_regions(seed, tiles, catalog)
+    mass_by_tile, main_mass_id = _land_mass_ids(tiles)
+    country_by_mass = _country_ids_by_land_mass(mass_by_tile)
+    region_data = _detect_region_data(
+        seed,
+        tiles,
+        catalog,
+        country_by_mass=country_by_mass,
+        mass_by_tile=mass_by_tile,
+        main_mass_id=main_mass_id,
+    )
+    regions = region_data.regions
     river_points = _river_points(seed, width, height, elevation, tiles)
     tiles = _overlay(tiles, river_points, "|")
-    landmarks = _landmarks(seed, rng, width, height, tiles, landmark_count, catalog)
+    landmarks = _landmarks(
+        seed,
+        rng,
+        width,
+        height,
+        tiles,
+        landmark_count,
+        catalog,
+        mass_by_tile,
+        country_by_mass,
+        region_data.region_by_tile,
+        {region.id: region.country_id for region in regions},
+    )
+    countries = _countries(
+        seed,
+        regions,
+        region_data.region_kind_counts,
+        catalog,
+        {
+            landmark.country_id: landmark.id
+            for landmark in landmarks
+            if landmark.kind == "capital" and landmark.country_id is not None
+        },
+    )
     tiles = _place_landmarks(tiles, landmarks)
 
     title = _title(seed, rng)
@@ -347,6 +412,7 @@ def generate_world(
         tiles=tuple("".join(row) for row in tiles),
         landmarks=tuple(landmarks),
         regions=regions,
+        countries=countries,
         locale=locale,
     )
 
@@ -438,11 +504,24 @@ def _field(seed: str, width: int, height: int, salt: str) -> list[list[float]]:
 
 
 def _detect_regions(seed: str, tiles: Sequence[Sequence[str]], catalog: LocaleCatalog) -> tuple[Region, ...]:
+    return _detect_region_data(seed, tiles, catalog).regions
+
+
+def _detect_region_data(
+    seed: str,
+    tiles: Sequence[Sequence[str]],
+    catalog: LocaleCatalog,
+    country_by_mass: dict[int, str] | None = None,
+    mass_by_tile: dict[tuple[int, int], int] | None = None,
+    main_mass_id: int | None = None,
+) -> _RegionData:
     components, component_by_tile = _land_components(tiles)
     if not components:
-        return ()
+        return _RegionData(regions=(), region_by_tile={}, region_kind_counts={})
 
-    mass_by_tile, main_mass_id = _land_mass_ids(tiles)
+    if mass_by_tile is None or main_mass_id is None:
+        mass_by_tile, main_mass_id = _land_mass_ids(tiles)
+    country_by_mass = country_by_mass or {}
     drafts: list[_RegionDraft] = []
     component_to_region: dict[int, int] = {}
 
@@ -487,23 +566,34 @@ def _detect_regions(seed: str, tiles: Sequence[Sequence[str]], catalog: LocaleCa
             )
             pending.remove(index)
 
-    _assign_coasts(drafts, tiles)
+    region_by_tile_index = _assign_coasts(drafts, tiles)
 
     regions: list[Region] = []
+    region_by_tile: dict[tuple[int, int], str] = {}
+    region_kind_counts: dict[str, dict[str, int]] = {}
     used_names: set[str] = set()
-    for index, draft in enumerate(sorted(drafts, key=lambda item: item.min_coord), start=1):
+    draft_region_ids: dict[int, str] = {}
+    for index, (draft_index, draft) in enumerate(sorted(enumerate(drafts), key=lambda item: item[1].min_coord), start=1):
         kind = _dominant_region_kind(draft.kind_counts)
+        region_id = f"rg-{index:02d}"
+        draft_region_ids[draft_index] = region_id
+        region_kind_counts[region_id] = dict(draft.kind_counts)
         regions.append(
             Region(
-                id=f"rg-{index:02d}",
+                id=region_id,
                 name=_region_name(seed, index, used_names),
                 kind=kind,
                 tile_count=len(draft.tiles),
                 is_island=draft.land_mass_id != main_mass_id,
                 description=catalog.content("regions")[REGION_DESCRIPTION_INDEX[kind]],
+                country_id=country_by_mass.get(draft.land_mass_id),
             )
         )
-    return tuple(regions)
+
+    for tile, draft_index in region_by_tile_index.items():
+        region_by_tile[tile] = draft_region_ids[draft_index]
+
+    return _RegionData(regions=tuple(regions), region_by_tile=region_by_tile, region_kind_counts=region_kind_counts)
 
 
 def _land_components(tiles: Sequence[Sequence[str]]) -> tuple[list[_LandComponent], dict[tuple[int, int], int]]:
@@ -578,6 +668,20 @@ def _land_mass_ids(tiles: Sequence[Sequence[str]]) -> tuple[dict[tuple[int, int]
     return mass_by_tile, main_mass_id
 
 
+def _country_ids_by_land_mass(mass_by_tile: dict[tuple[int, int], int]) -> dict[int, str]:
+    mass_tiles: dict[int, set[tuple[int, int]]] = {}
+    for tile, mass_id in mass_by_tile.items():
+        mass_tiles.setdefault(mass_id, set()).add(tile)
+
+    qualified = [
+        (mass_id, tiles)
+        for mass_id, tiles in mass_tiles.items()
+        if len(tiles) >= MIN_COUNTRY_LAND_TILES
+    ]
+    qualified.sort(key=lambda item: _min_coord(item[1]))
+    return {mass_id: f"co-{index + 1:02d}" for index, (mass_id, _) in enumerate(qualified)}
+
+
 def _classify_water_bodies(tiles: Sequence[Sequence[str]]) -> tuple[_WaterBody, ...]:
     height = len(tiles)
     width = len(tiles[0]) if height else 0
@@ -643,9 +747,9 @@ def _merge_component(draft: _RegionDraft, component: _LandComponent) -> None:
     draft.min_coord = min(draft.min_coord, component.min_coord)
 
 
-def _assign_coasts(drafts: list[_RegionDraft], tiles: Sequence[Sequence[str]]) -> None:
+def _assign_coasts(drafts: list[_RegionDraft], tiles: Sequence[Sequence[str]]) -> dict[tuple[int, int], int]:
     if not drafts:
-        return
+        return {}
 
     height = len(tiles)
     width = len(tiles[0]) if height else 0
@@ -674,6 +778,8 @@ def _assign_coasts(drafts: list[_RegionDraft], tiles: Sequence[Sequence[str]]) -
                 region_by_tile[tile] = region_index
             pending.clear()
 
+    return region_by_tile
+
 
 def _add_coast_tile(draft: _RegionDraft, tile: tuple[int, int]) -> None:
     draft.tiles.add(tile)
@@ -700,6 +806,19 @@ def _dominant_region_kind(kind_counts: dict[str, int]) -> str:
 
 def _region_name(seed: str, index: int, used_names: set[str]) -> str:
     rng = random.Random(_seed_int(seed, f"region-name-{index}"))
+    for _ in range(len(TITLE_ADJECTIVES) * len(TITLE_NOUNS)):
+        name = f"The {rng.choice(TITLE_ADJECTIVES)} {rng.choice(TITLE_NOUNS)}"
+        if name not in used_names:
+            used_names.add(name)
+            return name
+
+    name = f"The {rng.choice(TITLE_ADJECTIVES)} {rng.choice(TITLE_NOUNS)} {index}"
+    used_names.add(name)
+    return name
+
+
+def _country_name(seed: str, index: int, used_names: set[str]) -> str:
+    rng = random.Random(_seed_int(seed, f"country-name-{index}"))
     for _ in range(len(TITLE_ADJECTIVES) * len(TITLE_NOUNS)):
         name = f"The {rng.choice(TITLE_ADJECTIVES)} {rng.choice(TITLE_NOUNS)}"
         if name not in used_names:
@@ -845,31 +964,34 @@ def _landmarks(
     tiles: list[list[str]],
     landmark_count: int,
     catalog: LocaleCatalog,
+    mass_by_tile: dict[tuple[int, int], int],
+    country_by_mass: dict[int, str],
+    region_by_tile: dict[tuple[int, int], str],
+    country_by_region: dict[str, str | None],
 ) -> list[Landmark]:
+    used_names: set[str] = set()
+    landmarks = _capital_landmarks(seed, tiles, mass_by_tile, country_by_mass, region_by_tile, country_by_region, used_names, catalog)
+    occupied = {(landmark.x, landmark.y) for landmark in landmarks}
+
     land = [
         (x, y)
         for y in range(1, height - 1)
         for x in range(1, width - 1)
-        if tiles[y][x] in {";", ":", "^", ".", "|"}
+        if tiles[y][x] in {";", ":", "^", ".", "|"} and (x, y) not in occupied
     ]
     if not land or landmark_count <= 0:
-        return []
+        return landmarks
 
     min_distance = max(4, min(width, height) // 5)
     points = _spread_points(land, landmark_count, rng, min_distance=min_distance)
-    kinds = [("C", "capital"), ("v", "village"), ("v", "village"), ("X", "ruin"), ("T", "tower"), ("?", "oddity")]
-    landmarks: list[Landmark] = []
-    used_names: set[str] = set()
+    kinds = [("v", "village"), ("v", "village"), ("X", "ruin"), ("T", "tower"), ("?", "oddity")]
 
-    for index, (x, y) in enumerate(points):
-        if index == 0:
-            symbol, kind = "C", "capital"
-        else:
-            symbol, kind = rng.choice(kinds[1:])
+    for x, y in points:
+        symbol, kind = rng.choice(kinds)
         name = _unique_place_name(rng, used_names)
         landmarks.append(
             Landmark(
-                id=f"lm-{index + 1:02d}",
+                id=f"lm-{len(landmarks) + 1:02d}",
                 symbol=symbol,
                 name=name,
                 kind=kind,
@@ -881,10 +1003,133 @@ def _landmarks(
                 secret=rng.choice(catalog.content("secrets")),
                 danger=rng.choice(catalog.content("dangers")),
                 reward=rng.choice(catalog.content("rewards")),
+                country_id=_country_id_at((x, y), region_by_tile, country_by_region),
             )
         )
 
     return landmarks
+
+
+def _capital_landmarks(
+    seed: str,
+    tiles: Sequence[Sequence[str]],
+    mass_by_tile: dict[tuple[int, int], int],
+    country_by_mass: dict[int, str],
+    region_by_tile: dict[tuple[int, int], str],
+    country_by_region: dict[str, str | None],
+    used_names: set[str],
+    catalog: LocaleCatalog,
+) -> list[Landmark]:
+    capitals: list[Landmark] = []
+    for mass_id, country_id in sorted(country_by_mass.items(), key=lambda item: item[1]):
+        x, y = _capital_point(seed, mass_id, tiles, mass_by_tile)
+        rng = random.Random(_seed_int(seed, f"capital-{country_id}"))
+        capitals.append(
+            Landmark(
+                id=f"lm-{len(capitals) + 1:02d}",
+                symbol="C",
+                name=_unique_place_name(rng, used_names),
+                kind="capital",
+                x=x,
+                y=y,
+                rumor=rng.choice(catalog.content("rumors")),
+                npc=rng.choice(catalog.content("npcs")),
+                hook=rng.choice(catalog.content("hooks")),
+                secret=rng.choice(catalog.content("secrets")),
+                danger=rng.choice(catalog.content("dangers")),
+                reward=rng.choice(catalog.content("rewards")),
+                country_id=_country_id_at((x, y), region_by_tile, country_by_region),
+            )
+        )
+    return capitals
+
+
+def _capital_point(
+    seed: str,
+    mass_id: int,
+    tiles: Sequence[Sequence[str]],
+    mass_by_tile: dict[tuple[int, int], int],
+) -> tuple[int, int]:
+    candidates = sorted(
+        (
+            (x, y)
+            for (x, y), tile_mass_id in mass_by_tile.items()
+            if tile_mass_id == mass_id and tiles[y][x] in {";", ":", "^", ".", "|"}
+        ),
+        key=lambda point: (point[1], point[0]),
+    )
+    if not candidates:
+        candidates = sorted(
+            (
+                (x, y)
+                for (x, y), tile_mass_id in mass_by_tile.items()
+                if tile_mass_id == mass_id and tiles[y][x] not in WATER_TILES
+            ),
+            key=lambda point: (point[1], point[0]),
+        )
+    rng = random.Random(_seed_int(seed, f"capital-point-{mass_id}"))
+    return _spread_points(candidates, 1, rng, min_distance=0)[0]
+
+
+def _country_id_at(
+    point: tuple[int, int],
+    region_by_tile: dict[tuple[int, int], str],
+    country_by_region: dict[str, str | None],
+) -> str | None:
+    region_id = region_by_tile.get(point)
+    if region_id is None:
+        return None
+    return country_by_region.get(region_id)
+
+
+def _countries(
+    seed: str,
+    regions: tuple[Region, ...],
+    region_kind_counts: dict[str, dict[str, int]],
+    catalog: LocaleCatalog,
+    capital_by_country: dict[str | None, str],
+) -> tuple[Country, ...]:
+    regions_by_country: dict[str, list[Region]] = {}
+    for region in regions:
+        if region.country_id is not None:
+            regions_by_country.setdefault(region.country_id, []).append(region)
+
+    governments = catalog.content("governments")
+    crises = catalog.content("crises")
+    resources = catalog.content("resources")
+    countries: list[Country] = []
+    used_names = {region.name for region in regions}
+
+    for index, country_id in enumerate(sorted(regions_by_country), start=1):
+        country_regions = tuple(sorted(regions_by_country[country_id], key=lambda region: region.id))
+        kind_counts = _country_kind_counts(country_regions, region_kind_counts)
+        resource_kind = _dominant_region_kind(kind_counts)
+        political_rng = random.Random(_seed_int(seed, f"country-content-{country_id}"))
+        political_index = political_rng.randrange(min(len(governments), len(crises)))
+        countries.append(
+            Country(
+                id=country_id,
+                name=_country_name(seed, index, used_names),
+                government=governments[political_index],
+                resource=resources[COUNTRY_RESOURCE_INDEX[resource_kind]],
+                current_crisis=crises[political_index],
+                capital_landmark_id=capital_by_country[country_id],
+                region_ids=tuple(region.id for region in country_regions),
+            )
+        )
+
+    return tuple(countries)
+
+
+def _country_kind_counts(
+    regions: tuple[Region, ...],
+    region_kind_counts: dict[str, dict[str, int]],
+) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for region in regions:
+        for kind, count in region_kind_counts[region.id].items():
+            counts[kind] = counts.get(kind, 0) + count
+    return counts
 
 
 def _spread_points(

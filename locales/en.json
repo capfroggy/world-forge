@@ -151,6 +151,29 @@
       "Peaks high enough that summer never quite arrives.",
       "Water wide enough to make every map a guess.",
       "Water that answers to no tide and no one."
+    ],
+    "governments": [
+      "a merchant oligarchy that taxes roads more than goods",
+      "a tribal council bound by oaths older than its borders",
+      "a theocratic monarchy ruling in a god's declared absence",
+      "a fractured set of duchies loyal to a crown that no longer meets",
+      "a military protectorate that promised it was temporary",
+      "an exiled court still issuing laws for a capital it lost"
+    ],
+    "crises": [
+      "the treasury is funding a war nobody has declared",
+      "two seats on the council are claimed by the same heir",
+      "the god's silence is starting to look permanent",
+      "one duchy has started minting its own coin",
+      "the occupying garrison has stopped sending reports home",
+      "a faction inside the court wants to stop pretending"
+    ],
+    "resources": [
+      "timber tall enough to frame a fleet",
+      "dyes worth more than the caravans that carry them",
+      "grain enough to outlast any siege",
+      "ore that never quite runs out",
+      "furs thick enough to trade for a winter"
     ]
   }
 }

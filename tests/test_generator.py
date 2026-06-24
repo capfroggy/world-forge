@@ -26,7 +26,7 @@ class GenerateWorldTests(unittest.TestCase):
         payload = json.loads(world.to_json())
 
         self.assertEqual(payload["seed"], "json")
-        self.assertLessEqual(len(payload["landmarks"]), 4)
+        self.assertLessEqual(len(payload["landmarks"]), 4 + len(payload["countries"]))
         self.assertIn("tiles", payload)
         self.assertIn("hook", payload["landmarks"][0])
 

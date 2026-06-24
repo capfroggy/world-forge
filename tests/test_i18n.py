@@ -3,6 +3,7 @@ import unittest
 from contextlib import redirect_stderr, redirect_stdout
 
 from atlasmancer.cli import main
+from atlasmancer import generate_world
 from atlasmancer.i18n import LocaleCatalog, load_locale
 
 
@@ -11,7 +12,7 @@ class I18nTests(unittest.TestCase):
         en = load_locale("en")
         es = load_locale("es")
 
-        for key in ("npcs", "hooks", "rumors", "secrets", "dangers", "rewards", "regions"):
+        for key in ("npcs", "hooks", "rumors", "secrets", "dangers", "rewards", "regions", "governments", "crises", "resources"):
             self.assertEqual(len(en.content(key)), len(es.content(key)), key)
 
     def test_missing_locale_key_falls_back_to_english(self):
@@ -52,7 +53,8 @@ class I18nTests(unittest.TestCase):
         self.assertIn("Landmarks:", output)
         self.assertIn("NPC:", output)
         self.assertIn("Rumor:", output)
-        self.assertEqual(output.count("\n- "), 4)
+        expected_world = generate_world(seed="i18n-regression", width=36, height=16, landmark_count=4)
+        self.assertEqual(output.count("\n- "), len(expected_world.landmarks))
 
     def test_unsupported_locale_has_clear_error(self):
         error = io.StringIO()

@@ -151,6 +151,29 @@
       "Picos tan altos que el verano nunca termina de llegar.",
       "Un agua tan ancha que vuelve cada mapa una suposición.",
       "Un agua que no responde a ninguna marea, ni a nadie."
+    ],
+    "governments": [
+      "una oligarquía mercantil que grava más los caminos que la mercancía",
+      "un consejo tribal unido por juramentos más viejos que sus fronteras",
+      "una monarquía teocrática que gobierna en ausencia declarada de un dios",
+      "un conjunto fracturado de ducados leales a una corona que ya no se reúne",
+      "un protectorado militar que prometió ser temporal",
+      "una corte exiliada que sigue dictando leyes para una capital que perdió"
+    ],
+    "crises": [
+      "el tesoro financia una guerra que nadie ha declarado",
+      "dos asientos del consejo son reclamados por el mismo heredero",
+      "el silencio del dios empieza a parecer permanente",
+      "un ducado ha comenzado a acuñar su propia moneda",
+      "la guarnición ocupante dejó de enviar informes a casa",
+      "una facción dentro de la corte quiere dejar de fingir"
+    ],
+    "resources": [
+      "madera lo bastante alta para armar una flota",
+      "tintes que valen más que las caravanas que los cargan",
+      "grano suficiente para resistir cualquier sitio",
+      "mineral que nunca termina de agotarse",
+      "pieles lo bastante gruesas para cambiarlas por un invierno"
     ]
   }
 }

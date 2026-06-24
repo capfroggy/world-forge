@@ -2,6 +2,7 @@ import json
 import tempfile
 import unittest
 from contextlib import redirect_stderr, redirect_stdout
+from dataclasses import replace
 from io import StringIO
 from pathlib import Path
 
@@ -21,7 +22,7 @@ class CampaignLoaderTests(unittest.TestCase):
 
             reopened = load_campaign(path)
 
-        self.assertEqual(reopened, original)
+        self.assertEqual(reopened, _without_civilizations(original))
 
     def test_v0_2_schema_is_still_supported(self):
         original = generate_world(seed="v0-2-save", width=40, height=18, landmark_count=5, locale="en")
@@ -34,7 +35,7 @@ class CampaignLoaderTests(unittest.TestCase):
 
             reopened = load_campaign(path)
 
-        self.assertEqual(reopened, original)
+        self.assertEqual(reopened, _without_civilizations(original))
 
     def test_old_campaign_fixture_without_regions_still_opens_with_empty_regions(self):
         fixture = Path(__file__).resolve().parents[1] / "examples" / "example-campaign.json"
@@ -169,6 +170,14 @@ class CampaignLoaderTests(unittest.TestCase):
         self.assertIn(first_expected.description, text)
         self.assertNotIn(first_original.description, text)
         self.assertIn(first_original.name, text)
+
+def _without_civilizations(world):
+    return replace(
+        world,
+        countries=(),
+        regions=tuple(replace(region, country_id=None) for region in world.regions),
+        landmarks=tuple(replace(landmark, country_id=None) for landmark in world.landmarks),
+    )
 
 
 if __name__ == "__main__":
